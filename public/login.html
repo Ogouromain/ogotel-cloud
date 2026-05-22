@@ -1127,9 +1127,9 @@
 
         // ── Step 3: Redirect based on role ──
         if (userRole === 'super_admin') {
-          window.location.href = '../admin/super-admin.html';
+          window.location.href = 'admin/super-admin.html';
         } else if (userRole === 'hotel_admin' || userRole === 'receptionist') {
-          window.location.href = '../app/dashboard.html';
+          window.location.href = 'dashboard.html';
         } else {
           // No profile found, redirect to registration
           window.location.href = 'register.html';
