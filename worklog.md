@@ -38,3 +38,25 @@ Stage Summary:
 - Fonctionnalités : toggle œil afficher/masquer mot de passe, checkbox "Rester connecté", lien "Mot de passe oublié", validation temps réel inline, messages d'erreur spécifiques, spinner loading, lien vers register.html
 - Animations : fade-up au chargement, compteurs animés (easeOutQuart), hover scale sur boutons, focus glow vert, shake animation sur erreurs
 - Design identique à la landing page : mêmes couleurs, fonts, variables CSS, style premium SaaS
+
+---
+Task ID: 3
+Agent: Main Agent
+Task: Créer la page d'inscription avec code d'activation OGOTEL Cloud (register.html)
+
+Work Log:
+- Créé le fichier `public/register.html` — page d'inscription wizard 3 étapes (67KB)
+- Copié le fichier dans `src/ogotel-cloud/auth/register.html` comme livrable
+- Vérifié l'accessibilité via HTTP 200 sur `/register.html`, `/login.html`, `/landing.html`
+
+Stage Summary:
+- Page d'inscription premium avec wizard multi-étapes (3 étapes) et split-screen layout
+- Panneau gauche : fond #1B5E20, logo, titre "Activez votre espace hôtelier", 3 indicateurs d'étapes (numérotés ①②③) avec états actif/complété, motif SVG géométrique
+- Barre de progression dynamique avec texte "Étape X sur 3", fill gradient vert, dots + connecting lines
+- Étape 1 (Code d'activation) : input code font Space Mono 24px centré uppercase auto, validation Supabase table `activation_codes` avec jointure `subscription_plans`, vérification expiration, stockage sessionStorage, card de confirmation verte avec détails plan
+- Étape 2 (Informations hôtel) : grille 2 colonnes, 6 champs (nom, ville select, adresse, téléphone, email, nombre chambres), validation max_rooms selon plan, plan info banner doré
+- Étape 3 (Compte admin) : 5 champs (nom, email, WhatsApp, mot de passe + confirmation), barre de force mot de passe (4 segments rouge/orange/vert), toggle œil sur les 2 champs password, validation confirmation temps réel, checkbox conditions obligatoire
+- Inscription complète Supabase : auth.signUp → hotels.insert → user_profiles.insert → activation_codes.update (marquer utilisé), subscription_start/end calculé automatiquement (+1 an)
+- Overlay succès plein écran : fond vert, check animé bounceIn, titre "Bienvenue sur OGOTEL Cloud ! 🎉", barre progression dorée 0→100% en 3s, bouton "Accéder à mon dashboard", auto-redirect après 3.5s
+- Animations : slide horizontal entre étapes (stepFadeIn), fade-up, shake sur erreurs, bounceIn check, focus glow vert
+- Design cohérent avec landing + login : mêmes variables CSS, même charte graphique premium
