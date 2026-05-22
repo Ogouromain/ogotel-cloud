@@ -884,7 +884,7 @@
               <input type="checkbox" id="remember" name="remember">
               <span class="checkbox-label">Rester connecté</span>
             </label>
-            <a href="#" class="forgot-link">Mot de passe oublié ?</a>
+            <a href="#" class="forgot-link" onclick="openResetModal();return false;">Mot de passe oublié ?</a>
           </div>
 
           <!-- Submit -->
@@ -912,6 +912,33 @@
           </a>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div id="resetModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#fff;border-radius:16px;padding:36px;max-width:420px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,0.15);position:relative;">
+        <button onclick="closeResetModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;font-size:1.3rem;color:var(--text-secondary);cursor:pointer;">&times;</button>
+        <h3 style="font-family:var(--font-heading);font-size:1.3rem;font-weight:700;margin-bottom:8px;color:var(--text-primary);">Réinitialiser le mot de passe</h3>
+        <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:24px;">Entrez votre email. Vous recevrez un lien pour créer un nouveau mot de passe.</p>
+        <div id="resetErrorBox" style="display:none;padding:12px 16px;background:#FEF2F2;border:1px solid rgba(220,38,38,0.15);border-radius:10px;margin-bottom:16px;">
+          <span style="font-size:0.84rem;color:#991B1B;" id="resetErrorText"></span>
+        </div>
+        <div id="resetSuccessBox" style="display:none;padding:12px 16px;background:#F0F9F4;border:1px solid rgba(27,94,32,0.15);border-radius:10px;margin-bottom:16px;">
+          <span style="font-size:0.84rem;color:#1B5E20;">✅ Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.</span>
+        </div>
+        <form id="resetForm" onsubmit="handleResetPassword(event)">
+          <div style="margin-bottom:16px;">
+            <label style="font-size:0.84rem;font-weight:600;color:var(--text-primary);display:block;margin-bottom:6px;">Email</label>
+            <input type="email" id="resetEmail" required placeholder="votre@email.com" style="width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:var(--font-body);font-size:0.95rem;outline:none;transition:var(--transition);" onfocus="this.style.borderColor='var(--green-primary)';this.style.boxShadow='0 0 0 4px var(--green-glow)'" onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
+          </div>
+          <button type="submit" id="resetBtn" style="width:100%;height:50px;border:none;border-radius:var(--radius);background:var(--green-primary);color:#fff;font-family:var(--font-body);font-size:0.95rem;font-weight:700;cursor:pointer;transition:var(--transition);box-shadow:0 4px 16px rgba(27,94,32,0.25);">
+            Envoyer le lien de réinitialisation
+          </button>
+        </form>
+        <p style="text-align:center;margin-top:16px;">
+          <a href="#" onclick="closeResetModal();return false;" style="font-size:0.88rem;color:var(--text-secondary);font-weight:500;">← Retour à la connexion</a>
+        </p>
       </div>
     </div>
 
@@ -956,6 +983,15 @@
       } catch (err) {
         console.error('❌ Supabase init error:', err);
       }
+    }
+
+
+    // XSS Protection: escape HTML entities
+    function esc(str) {
+      if (str === null || str === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
     }
 
 
@@ -1144,6 +1180,59 @@
         submitBtn.classList.remove('loading');
       }
     });
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // RESET PASSWORD
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function openResetModal() {
+      document.getElementById('resetModal').style.display = 'flex';
+      document.getElementById('resetEmail').value = emailInput.value || '';
+      document.getElementById('resetErrorBox').style.display = 'none';
+      document.getElementById('resetSuccessBox').style.display = 'none';
+      document.getElementById('resetEmail').focus();
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').style.display = 'none';
+    }
+
+    async function handleResetPassword(e) {
+      e.preventDefault();
+      const email = document.getElementById('resetEmail').value.trim();
+      if (!email) return;
+
+      const btn = document.getElementById('resetBtn');
+      btn.disabled = true;
+      btn.textContent = 'Envoi en cours...';
+
+      try {
+        if (!supabase) {
+          document.getElementById('resetErrorText').textContent = 'Service indisponible. Vérifiez votre connexion.';
+          document.getElementById('resetErrorBox').style.display = 'block';
+          return;
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/auth/login.html'
+        });
+
+        if (error) {
+          document.getElementById('resetErrorText').textContent = error.message || 'Erreur lors de l\'envoi.';
+          document.getElementById('resetErrorBox').style.display = 'block';
+        } else {
+          document.getElementById('resetSuccessBox').style.display = 'block';
+          document.getElementById('resetErrorBox').style.display = 'none';
+        }
+      } catch (err) {
+        document.getElementById('resetErrorText').textContent = 'Erreur inattendue. Veuillez réessayer.';
+        document.getElementById('resetErrorBox').style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Envoyer le lien de réinitialisation';
+      }
+    }
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

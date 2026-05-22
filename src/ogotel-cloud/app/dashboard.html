@@ -82,7 +82,7 @@
           const nights = d1 && d2 ? Math.max(1, Math.ceil((d2 - d1) / 86400000)) : '—';
           const badgeMap = { confirmed: ['badge-blue','Confirmée'], checked_in: ['badge-green','En cours'], checked_out: ['badge-gray','Terminée'], cancelled: ['badge-red','Annulée'] };
           const [bc, bl] = badgeMap[r.reservation_status] || ['badge-gray', r.reservation_status];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + (r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + (r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + esc(r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + esc(r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
             (r.reservation_status === 'confirmed' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="performCheckIn('' + r.id + '')">Check-in</button>' : '') +
             (r.reservation_status === 'checked_in' ? '<button class="btn btn-sm" style="background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:0.72rem" onclick="performCheckOut('' + r.id + '')">Check-out</button>' : '') +
             '<button class="btn btn-outline btn-sm" onclick="showToast('Facture à venir','info')" title="Voir facture" style="padding:6px 8px">📄</button>' +
@@ -134,7 +134,16 @@
       if (!query || query.length < 2) { dd.style.display = 'none'; return; }
       const { data: clients } = await supabase.from('clients').select('*').eq('hotel_id', hotelId).or('name.ilike.%' + query + '%,phone.ilike.%' + query + '%').limit(8);
       if (!clients || clients.length === 0) { dd.style.display = 'none'; return; }
-      dd.innerHTML = clients.map(c => '<div class="autocomplete-item" onclick="selectResClient('' + c.id + '','' + (c.name || '').replace(/'/g, "\\'") + '')">' + (c.name || '—') + ' — ' + (c.phone || '') + '</div>').join('');
+      dd.innerHTML = clients.map(c => {
+            const safeName = esc(c.name || '—');
+            const safePhone = esc(c.phone || '');
+            return '<div class="autocomplete-item" data-id="' + c.id + '" data-name="' + safeName + '">' + safeName + ' — ' + safePhone + '</div>';
+          }).join('');
+          // Event delegation for autocomplete items
+          dd.onclick = function(e) {
+            const item = e.target.closest('.autocomplete-item');
+            if (item) selectResClient(item.dataset.id, item.dataset.name);
+          };
       dd.style.display = 'block';
     }
 
@@ -148,7 +157,7 @@
       const grid = document.getElementById('resRoomGrid');
       const { data: rooms } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).eq('status', 'available').order('number');
       if (!rooms || rooms.length === 0) { grid.innerHTML = '<p style="color:var(--text3)">Aucune chambre disponible</p>'; return; }
-      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + (r.number || '') + '</div><div class="rs-type">' + (r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
+      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + esc(r.number || '') + '</div><div class="rs-type">' + esc(r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
     }
 
     function selectResRoom(roomId, price, el) {
@@ -276,7 +285,7 @@
         if (search) query = query.or('name.ilike.%' + search + '%,phone.ilike.%' + search + '%');
         const { data: clients } = await query;
         if (!clients || clients.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Aucun client</td></tr>'; return; }
-        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + (c.name || '—') + '</td><td style="font-family:var(--mono)">' + (c.phone || '—') + '</td><td>' + (c.email || '—') + '</td><td>' + (c.nationality || '—') + '</td><td>' + ((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
+        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + esc(c.name || '—') + '</td><td style="font-family:var(--mono)">' + esc(c.phone || '—') + '</td><td>' + esc(c.email || '—') + '</td><td>' + esc(c.nationality || '—') + '</td><td>' + esc((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
 
@@ -342,7 +351,7 @@
         tbody.innerHTML = invoices.map(inv => {
           const reste = (inv.total_amount || 0) - (inv.amount_paid || 0);
           const [bc, bl] = badgeMap[inv.status] || ['badge-gray', inv.status || '—'];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + (inv.invoice_number || '—') + '</td><td>' + (inv.clients?.name || '—') + '</td><td>' + (inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + esc(inv.invoice_number || '—') + '</td><td>' + esc(inv.clients?.name || '—') + '</td><td>' + esc(inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
             (inv.status !== 'cancelled' ? '<button class="btn btn-outline btn-sm" onclick="generateInvoicePDF(' + JSON.stringify(inv).replace(/"/g, '&quot;') + ')" title="PDF">📄</button>' : '') +
             (inv.status === 'partial' || inv.status === 'pending' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="markInvoicePaid(\'' + inv.id + '\')">✅</button>' : '') +
             (inv.status !== 'cancelled' && inv.status !== 'paid' ? '<button class="btn btn-danger btn-sm" onclick="cancelInvoice(\'' + inv.id + '\')">❌</button>' : '') +
@@ -385,8 +394,8 @@
       doc.text('FACTURE : ' + (inv.invoice_number || ''), 20, 60);
       doc.text('Date : ' + new Date(inv.created_at).toLocaleDateString('fr-FR'), 120, 60);
       doc.setFont(undefined, 'normal');
-      doc.text('Client : ' + (inv.clients?.name || '—'), 20, 70);
-      doc.text('Chambre : ' + (inv.rooms?.number || '—'), 120, 70);
+      doc.text('Client : ' + esc(inv.clients?.name || '—'), 20, 70);
+      doc.text('Chambre : ' + esc(inv.rooms?.number || '—'), 120, 70);
       doc.setDrawColor(200); doc.line(20, 78, 190, 78);
       doc.setFontSize(10);
       doc.text('Description', 20, 86); doc.text('Total FCFA', 140, 86);
@@ -424,7 +433,7 @@
           const bg = colors[i % colors.length];
           const pos = s.position || s.user_profiles?.role || '—';
           const active = s.is_active !== false;
-          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + initials + '</div><h3>' + name + '</h3><p>' + pos + '</p><p>' + (s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
+          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + esc(initials) + '</div><h3>' + esc(name) + '</h3><p>' + esc(pos) + '</p><p>' + esc(s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
         }).join('');
       } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Erreur de chargement</p></div>'; }
     }
@@ -602,7 +611,7 @@
         const iconMap = { check_in: ['✅','check_in'], check_out: ['🚪','check_out'], create: ['➕','create'], update: ['✏️','update'], delete: ['🗑️','delete'] };
         tbody.innerHTML = logs.map(l => {
           const [icon, cls] = iconMap[l.action] || ['📝','update'];
-          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + (l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + (l.details || l.action) + '</td></tr>';
+          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + esc(l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + esc(l.details || l.action) + '</td></tr>';
         }).join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
@@ -798,7 +807,7 @@
           const nights = d1 && d2 ? Math.max(1, Math.ceil((d2 - d1) / 86400000)) : '—';
           const badgeMap = { confirmed: ['badge-blue','Confirmée'], checked_in: ['badge-green','En cours'], checked_out: ['badge-gray','Terminée'], cancelled: ['badge-red','Annulée'] };
           const [bc, bl] = badgeMap[r.reservation_status] || ['badge-gray', r.reservation_status];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + (r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + (r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + esc(r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + esc(r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
             (r.reservation_status === 'confirmed' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="performCheckIn('' + r.id + '')">Check-in</button>' : '') +
             (r.reservation_status === 'checked_in' ? '<button class="btn btn-sm" style="background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:0.72rem" onclick="performCheckOut('' + r.id + '')">Check-out</button>' : '') +
             '<button class="btn btn-outline btn-sm" onclick="showToast('Facture à venir','info')" title="Voir facture" style="padding:6px 8px">📄</button>' +
@@ -850,7 +859,16 @@
       if (!query || query.length < 2) { dd.style.display = 'none'; return; }
       const { data: clients } = await supabase.from('clients').select('*').eq('hotel_id', hotelId).or('name.ilike.%' + query + '%,phone.ilike.%' + query + '%').limit(8);
       if (!clients || clients.length === 0) { dd.style.display = 'none'; return; }
-      dd.innerHTML = clients.map(c => '<div class="autocomplete-item" onclick="selectResClient('' + c.id + '','' + (c.name || '').replace(/'/g, "\\'") + '')">' + (c.name || '—') + ' — ' + (c.phone || '') + '</div>').join('');
+      dd.innerHTML = clients.map(c => {
+            const safeName = esc(c.name || '—');
+            const safePhone = esc(c.phone || '');
+            return '<div class="autocomplete-item" data-id="' + c.id + '" data-name="' + safeName + '">' + safeName + ' — ' + safePhone + '</div>';
+          }).join('');
+          // Event delegation for autocomplete items
+          dd.onclick = function(e) {
+            const item = e.target.closest('.autocomplete-item');
+            if (item) selectResClient(item.dataset.id, item.dataset.name);
+          };
       dd.style.display = 'block';
     }
 
@@ -864,7 +882,7 @@
       const grid = document.getElementById('resRoomGrid');
       const { data: rooms } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).eq('status', 'available').order('number');
       if (!rooms || rooms.length === 0) { grid.innerHTML = '<p style="color:var(--text3)">Aucune chambre disponible</p>'; return; }
-      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + (r.number || '') + '</div><div class="rs-type">' + (r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
+      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + esc(r.number || '') + '</div><div class="rs-type">' + esc(r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
     }
 
     function selectResRoom(roomId, price, el) {
@@ -992,7 +1010,7 @@
         if (search) query = query.or('name.ilike.%' + search + '%,phone.ilike.%' + search + '%');
         const { data: clients } = await query;
         if (!clients || clients.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Aucun client</td></tr>'; return; }
-        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + (c.name || '—') + '</td><td style="font-family:var(--mono)">' + (c.phone || '—') + '</td><td>' + (c.email || '—') + '</td><td>' + (c.nationality || '—') + '</td><td>' + ((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
+        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + esc(c.name || '—') + '</td><td style="font-family:var(--mono)">' + esc(c.phone || '—') + '</td><td>' + esc(c.email || '—') + '</td><td>' + esc(c.nationality || '—') + '</td><td>' + esc((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
 
@@ -1058,7 +1076,7 @@
         tbody.innerHTML = invoices.map(inv => {
           const reste = (inv.total_amount || 0) - (inv.amount_paid || 0);
           const [bc, bl] = badgeMap[inv.status] || ['badge-gray', inv.status || '—'];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + (inv.invoice_number || '—') + '</td><td>' + (inv.clients?.name || '—') + '</td><td>' + (inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + esc(inv.invoice_number || '—') + '</td><td>' + esc(inv.clients?.name || '—') + '</td><td>' + esc(inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
             (inv.status !== 'cancelled' ? '<button class="btn btn-outline btn-sm" onclick="generateInvoicePDF(' + JSON.stringify(inv).replace(/"/g, '&quot;') + ')" title="PDF">📄</button>' : '') +
             (inv.status === 'partial' || inv.status === 'pending' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="markInvoicePaid(\'' + inv.id + '\')">✅</button>' : '') +
             (inv.status !== 'cancelled' && inv.status !== 'paid' ? '<button class="btn btn-danger btn-sm" onclick="cancelInvoice(\'' + inv.id + '\')">❌</button>' : '') +
@@ -1101,8 +1119,8 @@
       doc.text('FACTURE : ' + (inv.invoice_number || ''), 20, 60);
       doc.text('Date : ' + new Date(inv.created_at).toLocaleDateString('fr-FR'), 120, 60);
       doc.setFont(undefined, 'normal');
-      doc.text('Client : ' + (inv.clients?.name || '—'), 20, 70);
-      doc.text('Chambre : ' + (inv.rooms?.number || '—'), 120, 70);
+      doc.text('Client : ' + esc(inv.clients?.name || '—'), 20, 70);
+      doc.text('Chambre : ' + esc(inv.rooms?.number || '—'), 120, 70);
       doc.setDrawColor(200); doc.line(20, 78, 190, 78);
       doc.setFontSize(10);
       doc.text('Description', 20, 86); doc.text('Total FCFA', 140, 86);
@@ -1140,7 +1158,7 @@
           const bg = colors[i % colors.length];
           const pos = s.position || s.user_profiles?.role || '—';
           const active = s.is_active !== false;
-          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + initials + '</div><h3>' + name + '</h3><p>' + pos + '</p><p>' + (s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
+          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + esc(initials) + '</div><h3>' + esc(name) + '</h3><p>' + esc(pos) + '</p><p>' + esc(s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
         }).join('');
       } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Erreur de chargement</p></div>'; }
     }
@@ -1318,7 +1336,7 @@
         const iconMap = { check_in: ['✅','check_in'], check_out: ['🚪','check_out'], create: ['➕','create'], update: ['✏️','update'], delete: ['🗑️','delete'] };
         tbody.innerHTML = logs.map(l => {
           const [icon, cls] = iconMap[l.action] || ['📝','update'];
-          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + (l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + (l.details || l.action) + '</td></tr>';
+          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + esc(l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + esc(l.details || l.action) + '</td></tr>';
         }).join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
@@ -1514,7 +1532,7 @@
           const nights = d1 && d2 ? Math.max(1, Math.ceil((d2 - d1) / 86400000)) : '—';
           const badgeMap = { confirmed: ['badge-blue','Confirmée'], checked_in: ['badge-green','En cours'], checked_out: ['badge-gray','Terminée'], cancelled: ['badge-red','Annulée'] };
           const [bc, bl] = badgeMap[r.reservation_status] || ['badge-gray', r.reservation_status];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + (r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + (r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + esc(r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + esc(r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
             (r.reservation_status === 'confirmed' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="performCheckIn('' + r.id + '')">Check-in</button>' : '') +
             (r.reservation_status === 'checked_in' ? '<button class="btn btn-sm" style="background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:0.72rem" onclick="performCheckOut('' + r.id + '')">Check-out</button>' : '') +
             '<button class="btn btn-outline btn-sm" onclick="showToast('Facture à venir','info')" title="Voir facture" style="padding:6px 8px">📄</button>' +
@@ -1566,7 +1584,16 @@
       if (!query || query.length < 2) { dd.style.display = 'none'; return; }
       const { data: clients } = await supabase.from('clients').select('*').eq('hotel_id', hotelId).or('name.ilike.%' + query + '%,phone.ilike.%' + query + '%').limit(8);
       if (!clients || clients.length === 0) { dd.style.display = 'none'; return; }
-      dd.innerHTML = clients.map(c => '<div class="autocomplete-item" onclick="selectResClient('' + c.id + '','' + (c.name || '').replace(/'/g, "\\'") + '')">' + (c.name || '—') + ' — ' + (c.phone || '') + '</div>').join('');
+      dd.innerHTML = clients.map(c => {
+            const safeName = esc(c.name || '—');
+            const safePhone = esc(c.phone || '');
+            return '<div class="autocomplete-item" data-id="' + c.id + '" data-name="' + safeName + '">' + safeName + ' — ' + safePhone + '</div>';
+          }).join('');
+          // Event delegation for autocomplete items
+          dd.onclick = function(e) {
+            const item = e.target.closest('.autocomplete-item');
+            if (item) selectResClient(item.dataset.id, item.dataset.name);
+          };
       dd.style.display = 'block';
     }
 
@@ -1580,7 +1607,7 @@
       const grid = document.getElementById('resRoomGrid');
       const { data: rooms } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).eq('status', 'available').order('number');
       if (!rooms || rooms.length === 0) { grid.innerHTML = '<p style="color:var(--text3)">Aucune chambre disponible</p>'; return; }
-      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + (r.number || '') + '</div><div class="rs-type">' + (r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
+      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + esc(r.number || '') + '</div><div class="rs-type">' + esc(r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
     }
 
     function selectResRoom(roomId, price, el) {
@@ -1708,7 +1735,7 @@
         if (search) query = query.or('name.ilike.%' + search + '%,phone.ilike.%' + search + '%');
         const { data: clients } = await query;
         if (!clients || clients.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Aucun client</td></tr>'; return; }
-        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + (c.name || '—') + '</td><td style="font-family:var(--mono)">' + (c.phone || '—') + '</td><td>' + (c.email || '—') + '</td><td>' + (c.nationality || '—') + '</td><td>' + ((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
+        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + esc(c.name || '—') + '</td><td style="font-family:var(--mono)">' + esc(c.phone || '—') + '</td><td>' + esc(c.email || '—') + '</td><td>' + esc(c.nationality || '—') + '</td><td>' + esc((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
 
@@ -1774,7 +1801,7 @@
         tbody.innerHTML = invoices.map(inv => {
           const reste = (inv.total_amount || 0) - (inv.amount_paid || 0);
           const [bc, bl] = badgeMap[inv.status] || ['badge-gray', inv.status || '—'];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + (inv.invoice_number || '—') + '</td><td>' + (inv.clients?.name || '—') + '</td><td>' + (inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + esc(inv.invoice_number || '—') + '</td><td>' + esc(inv.clients?.name || '—') + '</td><td>' + esc(inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
             (inv.status !== 'cancelled' ? '<button class="btn btn-outline btn-sm" onclick="generateInvoicePDF(' + JSON.stringify(inv).replace(/"/g, '&quot;') + ')" title="PDF">📄</button>' : '') +
             (inv.status === 'partial' || inv.status === 'pending' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="markInvoicePaid(\'' + inv.id + '\')">✅</button>' : '') +
             (inv.status !== 'cancelled' && inv.status !== 'paid' ? '<button class="btn btn-danger btn-sm" onclick="cancelInvoice(\'' + inv.id + '\')">❌</button>' : '') +
@@ -1817,8 +1844,8 @@
       doc.text('FACTURE : ' + (inv.invoice_number || ''), 20, 60);
       doc.text('Date : ' + new Date(inv.created_at).toLocaleDateString('fr-FR'), 120, 60);
       doc.setFont(undefined, 'normal');
-      doc.text('Client : ' + (inv.clients?.name || '—'), 20, 70);
-      doc.text('Chambre : ' + (inv.rooms?.number || '—'), 120, 70);
+      doc.text('Client : ' + esc(inv.clients?.name || '—'), 20, 70);
+      doc.text('Chambre : ' + esc(inv.rooms?.number || '—'), 120, 70);
       doc.setDrawColor(200); doc.line(20, 78, 190, 78);
       doc.setFontSize(10);
       doc.text('Description', 20, 86); doc.text('Total FCFA', 140, 86);
@@ -1856,7 +1883,7 @@
           const bg = colors[i % colors.length];
           const pos = s.position || s.user_profiles?.role || '—';
           const active = s.is_active !== false;
-          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + initials + '</div><h3>' + name + '</h3><p>' + pos + '</p><p>' + (s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
+          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + esc(initials) + '</div><h3>' + esc(name) + '</h3><p>' + esc(pos) + '</p><p>' + esc(s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
         }).join('');
       } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Erreur de chargement</p></div>'; }
     }
@@ -2034,7 +2061,7 @@
         const iconMap = { check_in: ['✅','check_in'], check_out: ['🚪','check_out'], create: ['➕','create'], update: ['✏️','update'], delete: ['🗑️','delete'] };
         tbody.innerHTML = logs.map(l => {
           const [icon, cls] = iconMap[l.action] || ['📝','update'];
-          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + (l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + (l.details || l.action) + '</td></tr>';
+          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + esc(l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + esc(l.details || l.action) + '</td></tr>';
         }).join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
@@ -2230,7 +2257,7 @@
           const nights = d1 && d2 ? Math.max(1, Math.ceil((d2 - d1) / 86400000)) : '—';
           const badgeMap = { confirmed: ['badge-blue','Confirmée'], checked_in: ['badge-green','En cours'], checked_out: ['badge-gray','Terminée'], cancelled: ['badge-red','Annulée'] };
           const [bc, bl] = badgeMap[r.reservation_status] || ['badge-gray', r.reservation_status];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + (r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + (r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + esc(r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + esc(r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
             (r.reservation_status === 'confirmed' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="performCheckIn('' + r.id + '')">Check-in</button>' : '') +
             (r.reservation_status === 'checked_in' ? '<button class="btn btn-sm" style="background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:0.72rem" onclick="performCheckOut('' + r.id + '')">Check-out</button>' : '') +
             '<button class="btn btn-outline btn-sm" onclick="showToast('Facture à venir','info')" title="Voir facture" style="padding:6px 8px">📄</button>' +
@@ -2282,7 +2309,16 @@
       if (!query || query.length < 2) { dd.style.display = 'none'; return; }
       const { data: clients } = await supabase.from('clients').select('*').eq('hotel_id', hotelId).or('name.ilike.%' + query + '%,phone.ilike.%' + query + '%').limit(8);
       if (!clients || clients.length === 0) { dd.style.display = 'none'; return; }
-      dd.innerHTML = clients.map(c => '<div class="autocomplete-item" onclick="selectResClient('' + c.id + '','' + (c.name || '').replace(/'/g, "\\'") + '')">' + (c.name || '—') + ' — ' + (c.phone || '') + '</div>').join('');
+      dd.innerHTML = clients.map(c => {
+            const safeName = esc(c.name || '—');
+            const safePhone = esc(c.phone || '');
+            return '<div class="autocomplete-item" data-id="' + c.id + '" data-name="' + safeName + '">' + safeName + ' — ' + safePhone + '</div>';
+          }).join('');
+          // Event delegation for autocomplete items
+          dd.onclick = function(e) {
+            const item = e.target.closest('.autocomplete-item');
+            if (item) selectResClient(item.dataset.id, item.dataset.name);
+          };
       dd.style.display = 'block';
     }
 
@@ -2296,7 +2332,7 @@
       const grid = document.getElementById('resRoomGrid');
       const { data: rooms } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).eq('status', 'available').order('number');
       if (!rooms || rooms.length === 0) { grid.innerHTML = '<p style="color:var(--text3)">Aucune chambre disponible</p>'; return; }
-      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + (r.number || '') + '</div><div class="rs-type">' + (r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
+      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + esc(r.number || '') + '</div><div class="rs-type">' + esc(r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
     }
 
     function selectResRoom(roomId, price, el) {
@@ -2424,7 +2460,7 @@
         if (search) query = query.or('name.ilike.%' + search + '%,phone.ilike.%' + search + '%');
         const { data: clients } = await query;
         if (!clients || clients.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Aucun client</td></tr>'; return; }
-        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + (c.name || '—') + '</td><td style="font-family:var(--mono)">' + (c.phone || '—') + '</td><td>' + (c.email || '—') + '</td><td>' + (c.nationality || '—') + '</td><td>' + ((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
+        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + esc(c.name || '—') + '</td><td style="font-family:var(--mono)">' + esc(c.phone || '—') + '</td><td>' + esc(c.email || '—') + '</td><td>' + esc(c.nationality || '—') + '</td><td>' + esc((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
 
@@ -2490,7 +2526,7 @@
         tbody.innerHTML = invoices.map(inv => {
           const reste = (inv.total_amount || 0) - (inv.amount_paid || 0);
           const [bc, bl] = badgeMap[inv.status] || ['badge-gray', inv.status || '—'];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + (inv.invoice_number || '—') + '</td><td>' + (inv.clients?.name || '—') + '</td><td>' + (inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + esc(inv.invoice_number || '—') + '</td><td>' + esc(inv.clients?.name || '—') + '</td><td>' + esc(inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
             (inv.status !== 'cancelled' ? '<button class="btn btn-outline btn-sm" onclick="generateInvoicePDF(' + JSON.stringify(inv).replace(/"/g, '&quot;') + ')" title="PDF">📄</button>' : '') +
             (inv.status === 'partial' || inv.status === 'pending' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="markInvoicePaid(\'' + inv.id + '\')">✅</button>' : '') +
             (inv.status !== 'cancelled' && inv.status !== 'paid' ? '<button class="btn btn-danger btn-sm" onclick="cancelInvoice(\'' + inv.id + '\')">❌</button>' : '') +
@@ -2533,8 +2569,8 @@
       doc.text('FACTURE : ' + (inv.invoice_number || ''), 20, 60);
       doc.text('Date : ' + new Date(inv.created_at).toLocaleDateString('fr-FR'), 120, 60);
       doc.setFont(undefined, 'normal');
-      doc.text('Client : ' + (inv.clients?.name || '—'), 20, 70);
-      doc.text('Chambre : ' + (inv.rooms?.number || '—'), 120, 70);
+      doc.text('Client : ' + esc(inv.clients?.name || '—'), 20, 70);
+      doc.text('Chambre : ' + esc(inv.rooms?.number || '—'), 120, 70);
       doc.setDrawColor(200); doc.line(20, 78, 190, 78);
       doc.setFontSize(10);
       doc.text('Description', 20, 86); doc.text('Total FCFA', 140, 86);
@@ -2572,7 +2608,7 @@
           const bg = colors[i % colors.length];
           const pos = s.position || s.user_profiles?.role || '—';
           const active = s.is_active !== false;
-          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + initials + '</div><h3>' + name + '</h3><p>' + pos + '</p><p>' + (s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
+          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + esc(initials) + '</div><h3>' + esc(name) + '</h3><p>' + esc(pos) + '</p><p>' + esc(s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
         }).join('');
       } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Erreur de chargement</p></div>'; }
     }
@@ -2750,7 +2786,7 @@
         const iconMap = { check_in: ['✅','check_in'], check_out: ['🚪','check_out'], create: ['➕','create'], update: ['✏️','update'], delete: ['🗑️','delete'] };
         tbody.innerHTML = logs.map(l => {
           const [icon, cls] = iconMap[l.action] || ['📝','update'];
-          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + (l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + (l.details || l.action) + '</td></tr>';
+          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + esc(l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + esc(l.details || l.action) + '</td></tr>';
         }).join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
@@ -3857,6 +3893,15 @@
     // Use it ONLY on the server side.
     // ─────────────────────────────────────────
 
+    
+    // ─── XSS Protection ───
+    function esc(str) {
+      if (str === null || str === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
     const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
     // NEVER: const SERVICE_ROLE_KEY = '...'; ← backend only!
@@ -3888,6 +3933,25 @@
         currentProfile = profile;
         currentHotel = profile.hotels;
         hotelId = profile.hotel_id || currentHotel?.id;
+
+        // Check if hotel is active
+        if (currentHotel && currentHotel.is_active === false) {
+          // Show suspension overlay
+          document.getElementById('loadingScreen')?.remove();
+          document.querySelector('.app-container').innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);padding:40px;">
+              <div style="text-align:center;max-width:460px;">
+                <div style="font-size:3rem;margin-bottom:20px;">🔒</div>
+                <h2 style="font-family:var(--font-heading);font-size:1.5rem;color:var(--text-primary);margin-bottom:10px;">Hôtel suspendu</h2>
+                <p style="color:var(--text-secondary);margin-bottom:24px;">Votre espace a été suspendu par l'administration. Veuillez nous contacter pour plus d'informations.</p>
+                <a href="../auth/login.html" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--green-primary);color:#fff;border-radius:12px;font-weight:700;text-decoration:none;">Se déconnecter</a>
+                <p style="margin-top:16px;font-size:0.85rem;color:var(--text-secondary);">WhatsApp : +225 0576103277</p>
+              </div>
+            </div>
+          `;
+          return; // Stop all further loading
+        }
+
 
         // Redirect super_admin
         if (profile.role === 'super_admin') {
@@ -4001,7 +4065,7 @@
       const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
       const colors = { success: '#16A34A', error: '#DC2626', warning: '#EA580C', info: '#2563EB' };
       toast.style.borderLeft = '4px solid ' + (colors[type] || colors.success);
-      toast.innerHTML = '<span class="toast-icon">' + (icons[type] || icons.success) + '</span><span>' + msg + '</span><button onclick="this.parentElement.classList.add('out');setTimeout(()=>this.parentElement.remove(),300)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:1.1rem;margin-left:auto;padding:0">✕</button>';
+      toast.innerHTML = '<span class="toast-icon">' + (icons[type] || icons.success) + '</span><span>' + esc(msg) + '</span><button onclick="this.parentElement.classList.add('out');setTimeout(()=>this.parentElement.remove(),300)" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:1.1rem;margin-left:auto;padding:0">✕</button>';
       container.appendChild(toast);
       setTimeout(() => { toast.classList.add('out'); setTimeout(() => toast.remove(), 300); }, 4000);
     }
@@ -4072,8 +4136,8 @@
 
       grid.innerHTML = rooms.map(r => `
         <div class="room-card ${r.status || 'available'}" onclick="showRoomDetail(${JSON.stringify(r).replace(/"/g, '&quot;')})">
-          <div class="room-card-num">${r.number || '—'}</div>
-          <div class="room-card-type">${r.room_type || 'Chambre'}</div>
+          <div class="room-card-num">${esc(r.number || '—')}</div>
+          <div class="room-card-type">${esc(r.room_type || 'Chambre')}</div>
           <div class="room-card-price">${(r.price_per_night || 0).toLocaleString('fr-FR')} F</div>
         </div>
       `).join('');
@@ -4100,8 +4164,8 @@
 
       tbody.innerHTML = reservations.map(r => `
         <tr>
-          <td style="font-weight:500">${r.clients?.name || 'Client'}</td>
-          <td><span style="font-family:var(--mono);font-size:0.82rem">${r.rooms?.number || '—'}</span></td>
+          <td style="font-weight:500">${esc(r.clients?.name || 'Client')}</td>
+          <td><span style="font-family:var(--mono);font-size:0.82rem">${esc(r.rooms?.number || '—')}</span></td>
           <td><span style="font-family:var(--mono);font-size:0.82rem">${(r.amount_paid || 0).toLocaleString('fr-FR')}</span></td>
           <td>${statusBadge(r.reservation_status)}</td>
         </tr>
@@ -4126,9 +4190,9 @@
 
       tbody.innerHTML = rooms.map(r => `
         <tr>
-          <td><strong style="font-family:var(--mono)">${r.number || '—'}</strong></td>
-          <td>${r.room_type || '—'}</td>
-          <td>${r.floor || '—'}</td>
+          <td><strong style="font-family:var(--mono)">${esc(r.number || '—')}</strong></td>
+          <td>${esc(r.room_type || '—')}</td>
+          <td>${esc(r.floor || '—')}</td>
           <td style="font-family:var(--mono)">${(r.price_per_night || 0).toLocaleString('fr-FR')} F</td>
           <td>${r.capacity || '—'} pers.</td>
           <td>${roomStatusBadge(r.status)}</td>
@@ -4272,8 +4336,8 @@
 
       document.getElementById('rdBody').innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-          <div><strong style="font-size:0.82rem;color:var(--text3)">Type</strong><p>${r.room_type || '—'}</p></div>
-          <div><strong style="font-size:0.82rem;color:var(--text3)">Étage</strong><p>${r.floor || '—'}</p></div>
+          <div><strong style="font-size:0.82rem;color:var(--text3)">Type</strong><p>${esc(r.room_type || '—')}</p></div>
+          <div><strong style="font-size:0.82rem;color:var(--text3)">Étage</strong><p>${esc(r.floor || '—')}</p></div>
           <div><strong style="font-size:0.82rem;color:var(--text3)">Prix / nuit</strong><p style="font-family:var(--mono)">${(r.price_per_night || 0).toLocaleString('fr-FR')} FCFA</p></div>
           <div><strong style="font-size:0.82rem;color:var(--text3)">Capacité</strong><p>${r.capacity || '—'} personnes</p></div>
         </div>
@@ -4349,7 +4413,7 @@
           const nights = d1 && d2 ? Math.max(1, Math.ceil((d2 - d1) / 86400000)) : '—';
           const badgeMap = { confirmed: ['badge-blue','Confirmée'], checked_in: ['badge-green','En cours'], checked_out: ['badge-gray','Terminée'], cancelled: ['badge-red','Annulée'] };
           const [bc, bl] = badgeMap[r.reservation_status] || ['badge-gray', r.reservation_status];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + (r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + (r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">#' + (r.id || '').slice(0,8) + '</td><td style="font-weight:500">' + esc(r.clients?.name || '—') + '</td><td><span style="font-family:var(--mono)">' + esc(r.rooms?.number || '—') + '</span></td><td>' + fmtDate(ci) + '</td><td>' + fmtDate(co) + '</td><td style="font-family:var(--mono)">' + nights + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(r.amount_paid) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td><div style="display:flex;gap:4px">' +
             (r.reservation_status === 'confirmed' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="performCheckIn('' + r.id + '')">Check-in</button>' : '') +
             (r.reservation_status === 'checked_in' ? '<button class="btn btn-sm" style="background:#FFF7ED;color:#EA580C;border:1px solid #FED7AA;font-size:0.72rem" onclick="performCheckOut('' + r.id + '')">Check-out</button>' : '') +
             '<button class="btn btn-outline btn-sm" onclick="showToast('Facture à venir','info')" title="Voir facture" style="padding:6px 8px">📄</button>' +
@@ -4401,7 +4465,16 @@
       if (!query || query.length < 2) { dd.style.display = 'none'; return; }
       const { data: clients } = await supabase.from('clients').select('*').eq('hotel_id', hotelId).or('name.ilike.%' + query + '%,phone.ilike.%' + query + '%').limit(8);
       if (!clients || clients.length === 0) { dd.style.display = 'none'; return; }
-      dd.innerHTML = clients.map(c => '<div class="autocomplete-item" onclick="selectResClient('' + c.id + '','' + (c.name || '').replace(/'/g, "\\'") + '')">' + (c.name || '—') + ' — ' + (c.phone || '') + '</div>').join('');
+      dd.innerHTML = clients.map(c => {
+            const safeName = esc(c.name || '—');
+            const safePhone = esc(c.phone || '');
+            return '<div class="autocomplete-item" data-id="' + c.id + '" data-name="' + safeName + '">' + safeName + ' — ' + safePhone + '</div>';
+          }).join('');
+          // Event delegation for autocomplete items
+          dd.onclick = function(e) {
+            const item = e.target.closest('.autocomplete-item');
+            if (item) selectResClient(item.dataset.id, item.dataset.name);
+          };
       dd.style.display = 'block';
     }
 
@@ -4415,7 +4488,7 @@
       const grid = document.getElementById('resRoomGrid');
       const { data: rooms } = await supabase.from('rooms').select('*').eq('hotel_id', hotelId).eq('status', 'available').order('number');
       if (!rooms || rooms.length === 0) { grid.innerHTML = '<p style="color:var(--text3)">Aucune chambre disponible</p>'; return; }
-      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + (r.number || '') + '</div><div class="rs-type">' + (r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
+      grid.innerHTML = rooms.map(r => '<div class="room-select-card" onclick="selectResRoom('' + r.id + '',' + (r.price_per_night || 0) + ',this)" id="rsCard-' + r.id + '"><div class="rs-num">' + esc(r.number || '') + '</div><div class="rs-type">' + esc(r.room_type || '') + '</div><div class="rs-price">' + (r.price_per_night || 0).toLocaleString('fr-FR') + ' F</div></div>').join('');
     }
 
     function selectResRoom(roomId, price, el) {
@@ -4543,7 +4616,7 @@
         if (search) query = query.or('name.ilike.%' + search + '%,phone.ilike.%' + search + '%');
         const { data: clients } = await query;
         if (!clients || clients.length === 0) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Aucun client</td></tr>'; return; }
-        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + (c.name || '—') + '</td><td style="font-family:var(--mono)">' + (c.phone || '—') + '</td><td>' + (c.email || '—') + '</td><td>' + (c.nationality || '—') + '</td><td>' + ((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
+        tbody.innerHTML = clients.map(c => '<tr><td style="font-weight:500">' + esc(c.name || '—') + '</td><td style="font-family:var(--mono)">' + esc(c.phone || '—') + '</td><td>' + esc(c.email || '—') + '</td><td>' + esc(c.nationality || '—') + '</td><td>' + esc((c.id_type || '') + (c.id_number ? ' ' + c.id_number : '') || '—') + '</td><td>' + (c.vip_status ? '<span class="vip-badge">⭐ VIP</span>' : '—') + '</td><td><div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="openClientModal(' + JSON.stringify(c).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteClient(\'' + c.id + '\')">🗑️</button></div></td></tr>').join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }
 
@@ -4609,7 +4682,7 @@
         tbody.innerHTML = invoices.map(inv => {
           const reste = (inv.total_amount || 0) - (inv.amount_paid || 0);
           const [bc, bl] = badgeMap[inv.status] || ['badge-gray', inv.status || '—'];
-          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + (inv.invoice_number || '—') + '</td><td>' + (inv.clients?.name || '—') + '</td><td>' + (inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
+          return '<tr><td style="font-family:var(--mono);font-size:0.78rem">' + esc(inv.invoice_number || '—') + '</td><td>' + esc(inv.clients?.name || '—') + '</td><td>' + esc(inv.rooms?.number || '—') + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.total_amount) + '</td><td style="font-family:var(--mono)">' + fmtMoney(inv.amount_paid) + '</td><td style="font-family:var(--mono);color:' + (reste > 0 ? 'var(--red)' : 'var(--green)') + '">' + fmtMoney(reste) + '</td><td><span class="badge ' + bc + '">' + bl + '</span></td><td>' + fmtDate(inv.created_at) + '</td><td><div style="display:flex;gap:4px">' +
             (inv.status !== 'cancelled' ? '<button class="btn btn-outline btn-sm" onclick="generateInvoicePDF(' + JSON.stringify(inv).replace(/"/g, '&quot;') + ')" title="PDF">📄</button>' : '') +
             (inv.status === 'partial' || inv.status === 'pending' ? '<button class="btn btn-sm" style="background:#F0FDF4;color:#16A34A;border:1px solid #BBF7D0;font-size:0.72rem" onclick="markInvoicePaid(\'' + inv.id + '\')">✅</button>' : '') +
             (inv.status !== 'cancelled' && inv.status !== 'paid' ? '<button class="btn btn-danger btn-sm" onclick="cancelInvoice(\'' + inv.id + '\')">❌</button>' : '') +
@@ -4652,8 +4725,8 @@
       doc.text('FACTURE : ' + (inv.invoice_number || ''), 20, 60);
       doc.text('Date : ' + new Date(inv.created_at).toLocaleDateString('fr-FR'), 120, 60);
       doc.setFont(undefined, 'normal');
-      doc.text('Client : ' + (inv.clients?.name || '—'), 20, 70);
-      doc.text('Chambre : ' + (inv.rooms?.number || '—'), 120, 70);
+      doc.text('Client : ' + esc(inv.clients?.name || '—'), 20, 70);
+      doc.text('Chambre : ' + esc(inv.rooms?.number || '—'), 120, 70);
       doc.setDrawColor(200); doc.line(20, 78, 190, 78);
       doc.setFontSize(10);
       doc.text('Description', 20, 86); doc.text('Total FCFA', 140, 86);
@@ -4691,7 +4764,7 @@
           const bg = colors[i % colors.length];
           const pos = s.position || s.user_profiles?.role || '—';
           const active = s.is_active !== false;
-          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + initials + '</div><h3>' + name + '</h3><p>' + pos + '</p><p>' + (s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
+          return '<div class="staff-card"><div class="staff-avatar" style="background:' + bg + '">' + esc(initials) + '</div><h3>' + esc(name) + '</h3><p>' + esc(pos) + '</p><p>' + esc(s.phone || s.user_profiles?.phone || '—') + '</p><p><span class="badge ' + (active ? 'badge-green' : 'badge-red') + '">' + (active ? 'Actif' : 'Inactif') + '</span></p><div style="display:flex;gap:6px;justify-content:center;margin-top:10px"><button class="btn btn-outline btn-sm" onclick="openStaffModal(' + JSON.stringify(s).replace(/"/g, '&quot;') + ')">✏️</button><button class="btn btn-danger btn-sm" onclick="toggleStaffActive(\'' + s.id + '\',' + !active + ')">' + (active ? '⏸️' : '▶️') + '</button></div></div>';
         }).join('');
       } catch (e) { grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p>Erreur de chargement</p></div>'; }
     }
@@ -4869,7 +4942,7 @@
         const iconMap = { check_in: ['✅','check_in'], check_out: ['🚪','check_out'], create: ['➕','create'], update: ['✏️','update'], delete: ['🗑️','delete'] };
         tbody.innerHTML = logs.map(l => {
           const [icon, cls] = iconMap[l.action] || ['📝','update'];
-          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + (l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + (l.details || l.action) + '</td></tr>';
+          return '<tr><td style="font-size:0.82rem;color:var(--text3)">' + new Date(l.created_at).toLocaleString('fr-FR') + '</td><td style="font-weight:500">' + esc(l.user_name || '—') + '</td><td><div class="log-icon ' + cls + '">' + icon + '</div></td><td style="font-size:0.85rem">' + esc(l.details || l.action) + '</td></tr>';
         }).join('');
       } catch (e) { tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--red)">Erreur</td></tr>'; }
     }

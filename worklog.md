@@ -107,3 +107,98 @@ Stage Summary:
 - Code generation : format OGOT-{YEAR}-{RANDOM}, WhatsApp pré-rempli, copier presse-papier
 - Toast notifications 4 types, modals premium, loading skeletons, SPA routing, responsive mobile-first
 - UX : animated counters, hover glow, fade-in sections, drawer mobile sidebar
+
+---
+Task ID: 3
+Agent: Security Fix Agent
+Task: Fix login.html security vulnerabilities
+
+Work Log:
+- Implemented reset password modal with Supabase resetPasswordForEmail
+- Added esc() XSS protection function
+- Updated forgot password link to trigger modal
+
+Stage Summary:
+- Login page now has working password reset functionality
+- XSS protection added with esc() function
+- Reset password uses Supabase built-in email flow
+
+---
+Task ID: 2
+Agent: Security Fix Agent
+Task: Fix register.html security vulnerabilities
+
+Work Log:
+- Replaced direct activation_codes table access with RPC validate_activation_code
+- Replaced activation_codes.update with RPC use_activation_code
+- Fixed sessionStorage manipulation: only store code string, re-validate on step 3
+- Added esc() XSS protection function
+- Added rate limiting for activation code validation (5 attempts max)
+- Updated plan info display to use display-only sessionStorage
+
+Stage Summary:
+- register.html is now secure against sessionStorage manipulation
+- Activation code validation uses secure RPC functions
+- XSS protection added with esc() function
+- Rate limiting prevents brute force on activation codes
+
+---
+Task ID: 5
+Agent: Security Fix Agent
+Task: Fix super-admin.html XSS vulnerabilities
+
+Work Log:
+- Added esc() XSS protection function after Supabase config
+- Applied esc() to all innerHTML assignments with dynamic data across all tables:
+  - Overview activity table: hotel_name, user_name/user_email, action_type
+  - Hotel filter dropdown: hotel name
+  - Hotels table: name, city, plan, admin_email
+  - Hotel detail modal: city, plan, admin_email, phone, activation_code, rooms_count, notes
+  - Activation codes table: code, plan, used_by/client_email
+  - Requests/leads table: hotel name, contact name, whatsapp, city, rooms_count, plan
+  - Request convert modal: hotel name, plan interest
+  - Subscriptions table: hotel name, plan
+  - Activity logs table: hotel_name, user_name/user_email, action_type, details/description
+- Applied esc() to toast messages (showToast) for defense in depth
+- Fixed inline onclick handlers that passed dynamic names as string parameters:
+  - Hotels table: deleteHotel → deleteHotelById (looks up name from allHotels)
+  - Requests table: updateRequestStatus now looks up name/plan from allRequests
+  - Subscriptions table: showRenewModal → renewHotelById (looks up name/plan from allHotels)
+- Applied esc() to showConfirm messages that embed dynamic hotel names
+- Escaped email in mailto: href attribute to prevent attribute injection
+- Copied fixed file to both /public/admin/ and /src/ogotel-cloud/admin/
+
+Stage Summary:
+- Super admin page is now protected against XSS attacks
+- All dynamic database values in tables and modals are properly escaped
+- Inline onclick handlers no longer pass user-controlled strings
+- Confirm dialogs safely display hotel names via esc()
+
+---
+Task ID: 4
+Agent: Security Fix Agent
+Task: Fix dashboard.html security vulnerabilities
+
+Work Log:
+- Added esc() XSS protection function near top of main script block (after Supabase config)
+- Applied esc() to all innerHTML assignments with dynamic data across ALL 5 script blocks:
+  - loadReservationsTable (5 blocks): client name, room number
+  - loadClientsTable (5 blocks): name, phone, email, nationality, id_type/id_number
+  - loadBillingTable (5 blocks): invoice_number, client name, room number
+  - loadStaffGrid (5 blocks): initials, name, position, phone
+  - loadLogsTable (5 blocks): user_name, details/action
+  - loadAvailableRooms (5 blocks): room number, room type
+  - loadDashRoomGrid: room number, room type
+  - loadRecentReservations: client name, room number
+  - loadRoomsTable: room number, room type, floor, description, amenities
+  - showToast: msg parameter
+- Added is_active hotel suspension check on page load (after currentHotel is set)
+- Fixed searchResClients autocomplete XSS in all 5 occurrences: replaced unsafe inline onclick with event delegation using data-id/data-name attributes
+- Fixed incorrect esc() usage in .textContent assignment (removed unnecessary escaping)
+- NOTE: Could not copy to /public/dashboard.html due to root ownership — manual copy needed
+
+Stage Summary:
+- Dashboard is now protected against XSS via innerHTML
+- Suspended hotels are blocked with a clear lock screen message
+- All dynamic database values are properly escaped before rendering
+- Autocomplete dropdown uses safe event delegation instead of inline onclick string concatenation

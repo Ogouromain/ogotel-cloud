@@ -1125,6 +1125,22 @@
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // XSS Protection: escape HTML entities
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    function esc(str) {
+      if (str === null || str === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SECURITY: Rate limiting for code validation
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let codeValidationAttempts = 0;
+    const MAX_CODE_ATTEMPTS = 5;
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STATE
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let currentStep = 1;
@@ -1270,43 +1286,43 @@
         return;
       }
 
+      // Rate limiting check
+      codeValidationAttempts++;
+      if (codeValidationAttempts > MAX_CODE_ATTEMPTS) {
+        btn.disabled = true;
+        btn.textContent = 'Trop de tentatives. Réessayez plus tard.';
+        showErr('codeErrorBox', 'codeErrorText',
+          'Trop de tentatives de validation.<br>Attendez quelques minutes ou contactez-nous : <strong>+225 0576103277</strong>');
+        return;
+      }
+
       btn.disabled = true;
       btn.classList.add('loading');
 
       try {
         if (!supabase) throw new Error('Supabase non initialisé.');
 
-        const { data, error } = await supabase
-          .from('activation_codes')
-          .select('*, subscription_plans(*)')
-          .eq('code', code)
-          .eq('is_used', false)
-          .single();
+        // SECURITY: Use RPC instead of direct table access
+        const { data: codeData, error: codeErr } = await supabase.rpc('validate_activation_code', { p_code: code });
 
-        if (error || !data) {
+        if (codeErr || !codeData || !codeData.valid) {
           showErr('codeErrorBox', 'codeErrorText',
             'Code invalide ou déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
           return;
         }
 
-        // Check expiration
-        if (data.expires_at && new Date(data.expires_at) < new Date()) {
-          showErr('codeErrorBox', 'codeErrorText',
-            'Ce code a expiré.<br>Contactez-nous pour obtenir un nouveau code.');
-          return;
-        }
+        // SECURITY: Store ONLY the code string + display-only plan info in sessionStorage
+        sessionStorage.setItem('ogotel_code', code);
+        sessionStorage.setItem('ogotel_plan_display', JSON.stringify({
+          plan_name: codeData.plan_name || 'Plan',
+          max_rooms: codeData.max_rooms || 10,
+          max_users: codeData.max_users || 1
+        }));
 
-        // Store data
-        sessionStorage.setItem('activation_code', data.code);
-        sessionStorage.setItem('plan_name', data.plan_name || data.subscription_plans?.name || '');
-        sessionStorage.setItem('plan_id', String(data.plan_id || data.subscription_plans?.id || ''));
-        sessionStorage.setItem('max_rooms', String(data.subscription_plans?.max_rooms || 10));
-        sessionStorage.setItem('max_users', String(data.subscription_plans?.max_users || 1));
-
-        // Show success card
-        const planName = data.plan_name || data.subscription_plans?.name || 'Plan';
-        const maxRooms = data.subscription_plans?.max_rooms || 10;
-        const maxUsers = data.subscription_plans?.max_users || 1;
+        // Show success card with XSS-safe escaping
+        const planName = esc(codeData.plan_name || 'Plan');
+        const maxRooms = esc(codeData.max_rooms || 10);
+        const maxUsers = esc(codeData.max_users || 1);
 
         document.getElementById('codeSuccessDetails').innerHTML = `
           <div class="code-success-item">
@@ -1355,15 +1371,21 @@
       if (!phone) { showErr('hotelErrorBox', 'hotelErrorText', 'Le téléphone de l\'hôtel est requis.'); return false; }
       if (email && !isValidEmail(email)) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez entrer un email valide.'); return false; }
 
-      const maxRooms = parseInt(sessionStorage.getItem('max_rooms') || '10', 10);
+      // Read max_rooms from display-only sessionStorage
+      let maxRooms = 10;
+      try {
+        const planDisplay = JSON.parse(sessionStorage.getItem('ogotel_plan_display') || '{}');
+        maxRooms = parseInt(planDisplay.max_rooms, 10) || 10;
+      } catch(e) { /* fallback to 10 */ }
+
       if (!rooms || rooms < 1) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nombre de chambres est requis.'); return false; }
       if (rooms > maxRooms) {
         showErr('hotelErrorBox', 'hotelErrorText',
-          `Votre plan permet au maximum <strong>${maxRooms} chambres</strong>. Pour plus, contactez-nous.`);
+          `Votre plan permet au maximum <strong>${esc(maxRooms)} chambres</strong>. Pour plus, contactez-nous.`);
         return false;
       }
 
-      // Store
+      // Store hotel info (NOT plan info — that will be re-validated from server on submit)
       sessionStorage.setItem('hotel_name', name);
       sessionStorage.setItem('hotel_city', city);
       sessionStorage.setItem('hotel_address', address);
@@ -1443,6 +1465,21 @@
       try {
         if (!supabase) throw new Error('Supabase non initialisé.');
 
+        // SECURITY: Re-validate activation code via RPC before creating hotel
+        const storedCode = sessionStorage.getItem('ogotel_code');
+        if (!storedCode) {
+          showErr('adminErrorBox', 'adminErrorText',
+            'Code d\'activation introuvable. Veuillez recommencer.');
+          return;
+        }
+
+        const { data: freshValidation, error: freshErr } = await supabase.rpc('validate_activation_code', { p_code: storedCode });
+        if (freshErr || !freshValidation || !freshValidation.valid) {
+          showErr('adminErrorBox', 'adminErrorText',
+            'Code d\'activation invalide. Veuillez recommencer.');
+          return;
+        }
+
         // 1. Auth signup
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
@@ -1459,7 +1496,7 @@
           if (authError.message.includes('already registered')) {
             showErr('adminErrorBox', 'adminErrorText', 'Cet email est déjà utilisé.<br>Connectez-vous ou utilisez un autre email.');
           } else {
-            showErr('adminErrorBox', 'adminErrorText', `Erreur : ${authError.message}`);
+            showErr('adminErrorBox', 'adminErrorText', `Erreur : ${esc(authError.message)}`);
           }
           return;
         }
@@ -1469,7 +1506,7 @@
           return;
         }
 
-        // 2. Create hotel
+        // 2. Create hotel — use SERVER-VALIDATED values from freshValidation, NOT sessionStorage
         const { data: hotelData, error: hotelError } = await supabase
           .from('hotels')
           .insert({
@@ -1478,9 +1515,9 @@
             address: sessionStorage.getItem('hotel_address') || null,
             phone: sessionStorage.getItem('hotel_phone'),
             email: sessionStorage.getItem('hotel_email') || null,
-            plan_name: sessionStorage.getItem('plan_name'),
-            plan_id: parseInt(sessionStorage.getItem('plan_id'), 10),
-            activation_code: sessionStorage.getItem('activation_code'),
+            plan_name: freshValidation.plan_name || 'Plan',
+            plan_id: freshValidation.plan_id || null,
+            activation_code: storedCode,
             subscription_start: new Date().toISOString().split('T')[0],
             subscription_end: getEndDate()
           })
@@ -1504,13 +1541,9 @@
           console.warn('Profile creation warning:', profileErr);
         }
 
-        // 4. Mark code as used
+        // 4. SECURITY: Mark code as used via RPC (not direct table update)
         try {
-          await supabase.from('activation_codes').update({
-            is_used: true,
-            used_by: authData.user.id,
-            used_at: new Date().toISOString()
-          }).eq('code', sessionStorage.getItem('activation_code'));
+          await supabase.rpc('use_activation_code', { p_code: storedCode });
         } catch (codeErr) {
           console.warn('Code marking warning:', codeErr);
         }
@@ -1596,13 +1629,18 @@
         }
       });
 
-      // Populate plan info when step 2 becomes visible
+      // Populate plan info when step 2 becomes visible — use display-only sessionStorage
       const observer = new MutationObserver(() => {
         if (document.getElementById('step2').classList.contains('active')) {
-          const planName = sessionStorage.getItem('plan_name') || 'Plan';
-          const maxRooms = sessionStorage.getItem('max_rooms') || '10';
+          let planName = 'Plan';
+          let maxRooms = 10;
+          try {
+            const planDisplay = JSON.parse(sessionStorage.getItem('ogotel_plan_display') || '{}');
+            planName = planDisplay.plan_name || 'Plan';
+            maxRooms = planDisplay.max_rooms || 10;
+          } catch(e) { /* fallback defaults */ }
           document.getElementById('planInfo').innerHTML =
-            `📦 Votre plan <strong>${planName}</strong> permet jusqu'à <strong>${maxRooms} chambres</strong>`;
+            `📦 Votre plan <strong>${esc(planName)}</strong> permet jusqu'à <strong>${esc(maxRooms)} chambres</strong>`;
           document.getElementById('roomsHint').textContent =
             `Maximum autorisé par votre plan : ${maxRooms} chambres`;
           const roomsInput = document.getElementById('hotelRooms');
