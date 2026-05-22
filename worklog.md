@@ -17,3 +17,24 @@ Stage Summary:
 - Responsive mobile-first parfait
 - Toast notifications pour succès/erreur
 - Validation formulaire temps réel inline
+
+---
+Task ID: 2
+Agent: Main Agent
+Task: Créer la page de connexion OGOTEL Cloud (login.html)
+
+Work Log:
+- Créé le fichier `public/login.html` — page de connexion complète (39KB) avec split-screen layout
+- Copié le fichier dans `src/ogotel-cloud/auth/login.html` comme livrable
+- Vérifié l'accessibilité via HTTP 200 sur `/login.html`
+- Vérifié que `/landing.html` reste fonctionnel
+
+Stage Summary:
+- Page de connexion premium avec layout split-screen 50/50 desktop, empilé mobile
+- Panneau gauche : fond #1B5E20, logo OGOTEL Cloud, titre "Bon retour parmi vous 👋", 3 statistiques animées (47+ hôtels, 1200+ réservations, 1M+ FCFA), motif géométrique SVG en background (opacity 0.08)
+- Panneau droit : card blanche centrée (max-width 420px), titre "Connexion à votre espace", formulaire email + mot de passe
+- Authentification Supabase : signInWithPassword avec ANON KEY uniquement (commentaire sécurité inclus)
+- Redirection par rôle : super_admin → ../admin/super-admin.html, hotel_admin/receptionist → ../app/dashboard.html, pas de profil → register.html
+- Fonctionnalités : toggle œil afficher/masquer mot de passe, checkbox "Rester connecté", lien "Mot de passe oublié", validation temps réel inline, messages d'erreur spécifiques, spinner loading, lien vers register.html
+- Animations : fade-up au chargement, compteurs animés (easeOutQuart), hover scale sur boutons, focus glow vert, shake animation sur erreurs
+- Design identique à la landing page : mêmes couleurs, fonts, variables CSS, style premium SaaS
