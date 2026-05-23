@@ -18,9 +18,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Supabase v2 CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -964,26 +961,12 @@
     //
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+    const SB_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+    function sbHeaders(extra) { return Object.assign({ 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, extra || {}); }
 
     // NEVER expose this in frontend code:
     // const SERVICE_ROLE_KEY = '...'; ← JAMAIS DANS LE NAVIGATEUR !
-
-    let supabase = null;
-
-    function initSupabase() {
-      try {
-        if (window.supabase && window.supabase.createClient) {
-          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          console.log('✅ Supabase client initialized (ANON key only).');
-        } else {
-          console.warn('⚠️ Supabase library not loaded.');
-        }
-      } catch (err) {
-        console.error('❌ Supabase init error:', err);
-      }
-    }
 
 
     // XSS Protection: escape HTML entities
@@ -1115,29 +1098,29 @@
       const password = passwordInput.value;
 
       try {
-        if (!supabase) {
-          throw new Error('Supabase non initialisé. Vérifiez votre connexion internet.');
-        }
-
-        // ── Step 1: Authenticate with email/password ──
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
+        // ── Step 1: Authenticate with email/password via REST ──
+        const authRes = await fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+          method: 'POST',
+          headers: sbHeaders(),
+          body: JSON.stringify({ email, password })
         });
 
-        if (error) {
-          // Handle specific error messages
-          if (error.message.includes('Invalid login') || error.message.includes('Invalid credentials')) {
+        if (!authRes.ok) {
+          const authErr = await authRes.json().catch(() => ({}));
+          const errMsg = (authErr.error_description || authErr.msg || authErr.error || '').toLowerCase();
+          if (errMsg.includes('invalid login') || errMsg.includes('invalid credentials') || errMsg.includes('invalid email or password')) {
             showFormError('Email ou mot de passe incorrect.<br>Vérifiez vos identifiants.');
-          } else if (error.message.includes('Email not confirmed')) {
+          } else if (errMsg.includes('email not confirmed')) {
             showFormError('Votre email n\'a pas été confirmé.<br>Vérifiez votre boîte de réception.');
-          } else if (error.message.includes('Too many requests')) {
+          } else if (errMsg.includes('too many requests') || errMsg.includes('rate limit') || errMsg.includes('over_request_rate_limit')) {
             showFormError('Trop de tentatives.<br>Attendez quelques instants puis réessayez.');
           } else {
             showFormError('Email ou mot de passe incorrect.<br>Vérifiez vos identifiants.');
           }
           return;
         }
+
+        const data = await authRes.json();
 
         if (!data || !data.user) {
           showFormError('Une erreur inattendue est survenue.<br>Veuillez réessayer.');
@@ -1148,14 +1131,15 @@
         let userRole = null;
 
         try {
-          const { data: profile, error: profileError } = await supabase
-            .from('user_profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-
-          if (!profileError && profile) {
-            userRole = profile.role;
+          const profileRes = await fetch(
+            SB_URL + '/rest/v1/user_profiles?id=eq.' + encodeURIComponent(data.user.id) + '&select=role',
+            { headers: sbHeaders({ 'Authorization': 'Bearer ' + data.access_token }) }
+          );
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            if (profileData && profileData.length > 0) {
+              userRole = profileData[0].role;
+            }
           }
         } catch (profileErr) {
           console.warn('Could not fetch user profile:', profileErr);
@@ -1208,18 +1192,18 @@
       btn.textContent = 'Envoi en cours...';
 
       try {
-        if (!supabase) {
-          document.getElementById('resetErrorText').textContent = 'Service indisponible. Vérifiez votre connexion.';
-          document.getElementById('resetErrorBox').style.display = 'block';
-          return;
-        }
-
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin + '/login.html'
+        const resetRes = await fetch(SB_URL + '/auth/v1/recover', {
+          method: 'POST',
+          headers: sbHeaders(),
+          body: JSON.stringify({
+            email,
+            redirectTo: window.location.origin + '/login.html'
+          })
         });
 
-        if (error) {
-          document.getElementById('resetErrorText').textContent = error.message || 'Erreur lors de l\'envoi.';
+        if (!resetRes.ok) {
+          const resetErr = await resetRes.json().catch(() => ({}));
+          document.getElementById('resetErrorText').textContent = resetErr.error_description || resetErr.msg || resetErr.error || 'Erreur lors de l\'envoi.';
           document.getElementById('resetErrorBox').style.display = 'block';
         } else {
           document.getElementById('resetSuccessBox').style.display = 'block';
@@ -1276,7 +1260,7 @@
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     document.addEventListener('DOMContentLoaded', () => {
-      initSupabase();
+      console.log('✅ Supabase REST client ready (fetch-based, no CDN dependency).');
 
       // Start counter animation after a brief delay for page load
       setTimeout(animateCounters, 600);

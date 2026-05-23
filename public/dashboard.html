@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@0,700;0,800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+  <script>/* ── Supabase CDN removed — using native fetch wrapper (below) ── */
 
     // ─────────────────────────────────────────
     // ACTIVITY LOGGER
@@ -740,7 +740,7 @@
       });
     });
 
-  </script>
+  */</script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js">
 
     // ─────────────────────────────────────────
@@ -3902,11 +3902,127 @@
       return div.innerHTML;
     }
 
+    // ═══════════════════════════════════════════════════════
+    // SUPABASE NATIVE FETCH WRAPPER (no CDN dependency)
+    // ═══════════════════════════════════════════════════════
     const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
-    // NEVER: const SERVICE_ROLE_KEY = '...'; ← backend only!
 
-    let supabase = null;
+    function _sbGetToken() {
+      try { const r = localStorage.getItem('sb-pblizpjhsvctsrzzculc-auth-token'); if (r) { const p = JSON.parse(r); if (p.access_token) return p.access_token; } } catch(e) {}
+      return SUPABASE_ANON_KEY;
+    }
+    function _sbHeaders(extra) {
+      return Object.assign({ 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _sbGetToken(), 'Content-Type': 'application/json', 'Prefer': 'return=representation' }, extra || {});
+    }
+
+    class _SBQuery {
+      constructor(t) { this._t = t; this._s = '*'; this._f = []; this._ord = ''; this._lim = null; this._one = false; this._ct = null; this._hd = false; this._op = null; this._body = null; }
+      select(c, o) { if (o && o.count) { this._ct = o.count; this._hd = !!o.head; } this._s = c; if (!this._op) this._op = 'select'; return this; }
+      eq(c, v) { this._f.push(c + '=eq.' + encodeURIComponent(String(v))); return this; }
+      neq(c, v) { this._f.push(c + '=neq.' + encodeURIComponent(String(v))); return this; }
+      gt(c, v) { this._f.push(c + '=gt.' + encodeURIComponent(String(v))); return this; }
+      gte(c, v) { this._f.push(c + '=gte.' + encodeURIComponent(String(v))); return this; }
+      lt(c, v) { this._f.push(c + '=lt.' + encodeURIComponent(String(v))); return this; }
+      lte(c, v) { this._f.push(c + '=lte.' + encodeURIComponent(String(v))); return this; }
+      like(c, v) { this._f.push(c + '=like.' + encodeURIComponent(String(v))); return this; }
+      ilike(c, v) { this._f.push(c + '=ilike.' + encodeURIComponent(String(v))); return this; }
+      is(c, v) { this._f.push(c + '=is.' + encodeURIComponent(String(v))); return this; }
+      in(c, v) { this._f.push(c + '=in.(' + v.map(function(x){return encodeURIComponent(String(x))}).join(',') + ')'); return this; }
+      or(v) { this._f.push('or=(' + v + ')'); return this; }
+      order(c, o) { this._ord = c + (o && o.ascending === false ? '.desc' : '.asc'); return this; }
+      limit(n) { this._lim = n; return this; }
+      single() { this._one = true; return this; }
+      maybeSingle() { this._one = 'maybe'; return this; }
+      insert(row) { this._op = 'insert'; this._body = row; return this; }
+      update(row) { this._op = 'update'; this._body = row; return this; }
+      _delete() { this._op = 'delete'; return this; }
+      _url() {
+        var u = SUPABASE_URL + '/rest/v1/' + this._t + '?';
+        var p = [];
+        if (this._hd) { p.push('select=count()'); } else { p.push('select=' + encodeURIComponent(this._s)); }
+        this._f.forEach(function(f){ p.push(f); });
+        if (this._ord) p.push('order=' + this._ord);
+        if (this._lim != null) p.push('limit=' + this._lim);
+        u += p.join('&');
+        return u;
+      }
+      _run() {
+        var self = this;
+        var pref = ['return=representation'];
+        if (this._ct) pref.push('count=' + this._ct);
+        var hdrs = _sbHeaders({ 'Prefer': pref.join(',') });
+        var url = this._url();
+        var method = 'GET';
+        if (this._op === 'insert') method = 'POST';
+        else if (this._op === 'update') method = 'PATCH';
+        else if (this._op === 'delete') method = 'DELETE';
+        if (this._hd) method = 'HEAD';
+        var opts = { method: method, headers: hdrs };
+        if (this._body && (method === 'POST' || method === 'PATCH')) opts.body = JSON.stringify(this._body);
+        return fetch(url, opts).then(function(res) {
+          if (self._hd) {
+            var cr = res.headers.get('content-range') || '';
+            var cnt = parseInt(cr.split('/')[1] || '0', 10);
+            return { data: [], count: cnt };
+          }
+          return res.json().then(function(data) {
+            if (!res.ok) return { data: null, error: { message: (data && (data.message || data.msg)) || ('HTTP ' + res.status), status: res.status } };
+            if (self._one === true) data = (Array.isArray(data) && data.length > 0) ? data[0] : null;
+            if (self._one === 'maybe') data = (Array.isArray(data) && data.length > 0) ? data[0] : null;
+            return { data: data, error: null };
+          });
+        });
+      }
+      then(resolve, reject) { return this._run().then(resolve, reject); }
+    }
+
+    // Make _SBQuery.delete() work as a method (delete is a reserved word in strict mode)
+    _SBQuery.prototype.delete = function() { this._op = 'delete'; return this; };
+
+    const supabase = {
+      from: function(t) { return new _SBQuery(t); },
+      auth: {
+        getSession: function() {
+          return new Promise(function(resolve) {
+            try {
+              var raw = localStorage.getItem('sb-pblizpjhsvctsrzzculc-auth-token');
+              if (raw) {
+                var p = JSON.parse(raw);
+                if (p.access_token) {
+                  var parts = p.access_token.split('.');
+                  var payload = {};
+                  try { payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))); } catch(e) {}
+                  resolve({ data: { session: { user: payload, access_token: p.access_token, refresh_token: p.refresh_token, expires_in: p.expires_in, token_type: p.token_type } } });
+                  return;
+                }
+              }
+            } catch(e) {}
+            resolve({ data: { session: null } });
+          });
+        },
+        signOut: function() { localStorage.removeItem('sb-pblizpjhsvctsrzzculc-auth-token'); return Promise.resolve(); },
+        signUp: function(opts) {
+          return fetch(SUPABASE_URL + '/auth/v1/signup', {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: opts.email, password: opts.password })
+          }).then(function(res) { return res.json(); }).then(function(data) {
+            return data.error ? { data: null, error: data.error } : { data: data, error: null };
+          }).catch(function(e) { return { data: null, error: { message: e.message } }; });
+        },
+        updateUser: function(attrs) {
+          return fetch(SUPABASE_URL + '/auth/v1/user', {
+            method: 'PUT',
+            headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + _sbGetToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify(attrs)
+          }).then(function(res) { return res.json(); }).then(function(data) {
+            return data.error ? { data: null, error: data.error } : { data: data, error: null };
+          }).catch(function(e) { return { data: null, error: { message: e.message } }; });
+        }
+      }
+    };
+
     let currentUser = null;
     let currentProfile = null;
     let currentHotel = null;
@@ -3915,7 +4031,6 @@
     // ─── INIT ───
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Check session
         const { data: { session } } = await supabase.auth.getSession();

@@ -11,7 +11,7 @@
        ============================================================ -->
 
   <!-- CDN Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase SDK replaced with native fetch() calls for Côte d'Ivoire CDN compatibility -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1497,12 +1497,35 @@ Pour renouveler : +225 0576103277</pre>
        The SERVICE ROLE KEY must NEVER appear in frontend code.
        ============================================================== */
 
-    // ---- Supabase Config ----
-    const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+    // ---- Supabase Config (native fetch, no CDN) ----
+    const SB_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
     const SUPER_ADMIN_EMAIL = 'tsiogou@gmail.com';
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    function sbHeaders(extra) {
+      const h = { 'apikey': SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+      try {
+        const s = localStorage.getItem('sb-pblizpjhsvctsrzzculc-auth-token');
+        if (s) { const p = JSON.parse(s); if (p.access_token) h['Authorization'] = 'Bearer ' + p.access_token; }
+      } catch(e) {}
+      return Object.assign(h, extra || {});
+    }
+
+    function getAccessToken() {
+      try {
+        const s = localStorage.getItem('sb-pblizpjhsvctsrzzculc-auth-token');
+        if (s) { const p = JSON.parse(s); return p.access_token || null; }
+      } catch(e) {}
+      return null;
+    }
+
+    function getSession() {
+      try {
+        const s = localStorage.getItem('sb-pblizpjhsvctsrzzculc-auth-token');
+        if (s) { const p = JSON.parse(s); return { data: { session: p } }; }
+      } catch(e) {}
+      return { data: { session: null } };
+    }
 
     // ─── XSS Protection ───
     function esc(str) {
@@ -1638,7 +1661,7 @@ Pour renouveler : +225 0576103277</pre>
       const layout = document.getElementById('appLayout');
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = getSession();
 
         if (!session) {
           loading.classList.add('hidden');
@@ -1724,7 +1747,14 @@ Pour renouveler : +225 0576103277</pre>
     }
 
     async function handleLogout() {
-      await supabase.auth.signOut();
+      try {
+        const token = getAccessToken();
+        await fetch(SB_URL + '/auth/v1/logout', {
+          method: 'POST',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+        });
+      } catch(e) {}
+      localStorage.removeItem('sb-pblizpjhsvctsrzzculc-auth-token');
       window.location.href = '/auth/login.html';
     }
 
@@ -1769,20 +1799,20 @@ Pour renouveler : +225 0576103277</pre>
       try {
         // Parallel queries
         const [hotelsRes, requestsRes, codesRes, codesUsedRes, usersRes, activityRes] = await Promise.all([
-          supabase.from('hotels').select('*').eq('is_active', true),
-          supabase.from('landing_requests').select('*').eq('status', 'new'),
-          supabase.from('activation_codes').select('*').eq('is_used', false).gt('expires_at', new Date().toISOString()),
-          supabase.from('activation_codes').select('*').eq('is_used', true).gte('used_at', startOfMonth()),
-          supabase.from('user_profiles').select('*').neq('role', 'super_admin'),
-          supabase.from('activity_logs').select('*').order('created_at', { ascending: false }).limit(10)
+          fetch(SB_URL + '/rest/v1/hotels?select=*&is_active=eq.true', { headers: sbHeaders() }).then(r => r.json()),
+          fetch(SB_URL + '/rest/v1/landing_requests?select=*&status=eq.new', { headers: sbHeaders() }).then(r => r.json()),
+          fetch(SB_URL + '/rest/v1/activation_codes?select=*&is_used=eq.false&expires_at=gt.' + encodeURIComponent(new Date().toISOString()), { headers: sbHeaders() }).then(r => r.json()),
+          fetch(SB_URL + '/rest/v1/activation_codes?select=*&is_used=eq.true&used_at=gte.' + encodeURIComponent(startOfMonth()), { headers: sbHeaders() }).then(r => r.json()),
+          fetch(SB_URL + '/rest/v1/user_profiles?select=*&role=neq.super_admin', { headers: sbHeaders() }).then(r => r.json()),
+          fetch(SB_URL + '/rest/v1/activity_logs?select=*&order=created_at.desc&limit=10', { headers: sbHeaders() }).then(r => r.json())
         ]);
 
-        const activeHotels = hotelsRes.data || [];
-        const newRequests = requestsRes.data || [];
-        const availableCodes = codesRes.data || [];
-        const usedCodesMonth = codesUsedRes.data || [];
-        const users = usersRes.data || [];
-        const activities = activityRes.data || [];
+        const activeHotels = Array.isArray(hotelsRes) ? hotelsRes : [];
+        const newRequests = Array.isArray(requestsRes) ? requestsRes : [];
+        const availableCodes = Array.isArray(codesRes) ? codesRes : [];
+        const usedCodesMonth = Array.isArray(codesUsedRes) ? codesUsedRes : [];
+        const users = Array.isArray(usersRes) ? usersRes : [];
+        const activities = Array.isArray(activityRes) ? activityRes : [];
 
         // Calculate revenue
         let revenue = 0;
@@ -1885,13 +1915,9 @@ Pour renouveler : +225 0576103277</pre>
     // ---- HOTELS ----
     async function loadHotels() {
       try {
-        const { data: hotels, error } = await supabase
-          .from('hotels')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        allHotels = hotels || [];
+        const hotelsRes = await fetch(SB_URL + '/rest/v1/hotels?select=*&order=created_at.desc', { headers: sbHeaders() });
+        if (!hotelsRes.ok) throw new Error('Erreur de chargement');
+        allHotels = (await hotelsRes.json()) || [];
 
         document.getElementById('hotelsCount').textContent = allHotels.length;
 
@@ -1967,7 +1993,9 @@ Pour renouveler : +225 0576103277</pre>
 
     async function showHotelDetail(hotelId) {
       try {
-        const { data: hotel } = await supabase.from('hotels').select('*').eq('id', hotelId).single();
+        const hotelRaw = await fetch(SB_URL + '/rest/v1/hotels?select=*&id=eq.' + hotelId, { headers: sbHeaders() });
+        const hotelArr = await hotelRaw.json();
+        const hotel = Array.isArray(hotelArr) && hotelArr.length > 0 ? hotelArr[0] : null;
         if (!hotel) { showToast('Hôtel introuvable', 'error'); return; }
 
         const name = hotel.name || hotel.hotel_name || 'Sans nom';
@@ -1977,12 +2005,12 @@ Pour renouveler : +225 0576103277</pre>
 
         // Try to get related data
         const [resCount, clientCount] = await Promise.allSettled([
-          supabase.from('reservations').select('id', { count: 'exact', head: true }).eq('hotel_id', hotelId),
-          supabase.from('user_profiles').select('id', { count: 'exact', head: true }).eq('hotel_id', hotelId)
+          fetch(SB_URL + '/rest/v1/reservations?hotel_id=eq.' + hotelId + '&select=id', { headers: sbHeaders() }).then(r => r.json()),
+          fetch(SB_URL + '/rest/v1/user_profiles?hotel_id=eq.' + hotelId + '&select=id', { headers: sbHeaders() }).then(r => r.json())
         ]);
 
-        const reservations = resCount.status === 'fulfilled' ? resCount.value.count : 0;
-        const clients = clientCount.status === 'fulfilled' ? clientCount.value.count : 0;
+        const reservations = resCount.status === 'fulfilled' && Array.isArray(resCount.value) ? resCount.value.length : 0;
+        const clients = clientCount.status === 'fulfilled' && Array.isArray(clientCount.value) ? clientCount.value.length : 0;
 
         document.getElementById('hotelDetailTitle').textContent = name;
         document.getElementById('hotelDetailContent').innerHTML = `
@@ -2051,8 +2079,12 @@ Pour renouveler : +225 0576103277</pre>
         `Voulez-vous vraiment ${action} cet hôtel ?`,
         async () => {
           try {
-            const { error } = await supabase.from('hotels').update({ is_active: newStatus }).eq('id', hotelId);
-            if (error) throw error;
+            const updRes = await fetch(SB_URL + '/rest/v1/hotels?id=eq.' + hotelId, {
+              method: 'PATCH',
+              headers: sbHeaders({ 'Prefer': 'return=minimal' }),
+              body: JSON.stringify({ is_active: newStatus })
+            });
+            if (!updRes.ok) { const errData = await updRes.json().catch(() => ({})); throw new Error(errData.message || 'Erreur'); }
             showToast(`Hôtel ${newStatus ? 'réactivé' : 'suspendu'}`, 'success');
             loadHotels();
           } catch (err) {
@@ -2078,8 +2110,11 @@ Pour renouveler : +225 0576103277</pre>
             `Dernière chance ! Êtes-vous sûr de vouloir supprimer <strong>${esc(hotelName)}</strong> ? Toutes les données associées seront perdues.`,
             async () => {
               try {
-                const { error } = await supabase.from('hotels').delete().eq('id', hotelId);
-                if (error) throw error;
+                const delRes = await fetch(SB_URL + '/rest/v1/hotels?id=eq.' + hotelId, {
+                  method: 'DELETE',
+                  headers: sbHeaders({ 'Prefer': 'return=minimal' })
+                });
+                if (!delRes.ok) { const errData = await delRes.json().catch(() => ({})); throw new Error(errData.message || 'Erreur'); }
                 showToast('Hôtel supprimé', 'success');
                 loadHotels();
               } catch (err) {
@@ -2094,13 +2129,9 @@ Pour renouveler : +225 0576103277</pre>
     // ---- CODES ----
     async function loadCodes() {
       try {
-        const { data: codes, error } = await supabase
-          .from('activation_codes')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        allCodes = codes || [];
+        const codesRes = await fetch(SB_URL + '/rest/v1/activation_codes?select=*&order=created_at.desc', { headers: sbHeaders() });
+        if (!codesRes.ok) throw new Error('Erreur de chargement');
+        allCodes = (await codesRes.json()) || [];
 
         const now = new Date();
         const available = allCodes.filter(c => !c.is_used && (!c.expires_at || new Date(c.expires_at) > now));
@@ -2112,8 +2143,9 @@ Pour renouveler : +225 0576103277</pre>
         document.getElementById('codesExpiredCount').textContent = expired.length;
 
         // Also load plan IDs for the generation form
-        const { data: plans } = await supabase.from('subscription_plans').select('*');
-        if (plans) {
+        const plansRes = await fetch(SB_URL + '/rest/v1/subscription_plans?select=*', { headers: sbHeaders() });
+        const plans = await plansRes.json();
+        if (plans && Array.isArray(plans)) {
           plans.forEach(p => {
             const card = document.querySelector(`.plan-radio-card[data-plan="${p.name}"]`);
             if (card) card.dataset.planId = p.id;
@@ -2215,15 +2247,14 @@ Pour renouveler : +225 0576103277</pre>
         };
         if (client) insertData.client_name = client;
 
-        const { data, error } = await supabase
-          .from('activation_codes')
-          .insert(insertData)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        currentGeneratedCode = data;
+        const insertRes = await fetch(SB_URL + '/rest/v1/activation_codes', {
+          method: 'POST',
+          headers: sbHeaders(),
+          body: JSON.stringify(insertData)
+        });
+        if (!insertRes.ok) { const errData = await insertRes.json().catch(() => ({})); throw new Error(errData.message || 'Erreur'); }
+        const insertResult = await insertRes.json();
+        currentGeneratedCode = Array.isArray(insertResult) ? insertResult[0] : insertResult;
 
         // Show generated code
         document.getElementById('generatedCodeDisplay').style.display = 'block';
@@ -2257,13 +2288,9 @@ Pour renouveler : +225 0576103277</pre>
     // ---- REQUESTS ----
     async function loadRequests() {
       try {
-        const { data: requests, error } = await supabase
-          .from('landing_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        allRequests = requests || [];
+        const reqRes = await fetch(SB_URL + '/rest/v1/landing_requests?select=*&order=created_at.desc', { headers: sbHeaders() });
+        if (!reqRes.ok) throw new Error('Erreur de chargement');
+        allRequests = (await reqRes.json()) || [];
 
         const newCount = allRequests.filter(r => r.status === 'new').length;
         document.getElementById('requestsCount').textContent = allRequests.length;
@@ -2372,7 +2399,12 @@ Pour renouveler : +225 0576103277</pre>
         newBtn.id = 'convertAction';
         newBtn.addEventListener('click', async () => {
           try {
-            await supabase.from('landing_requests').update({ status: 'converted' }).eq('id', requestId);
+            const convRes = await fetch(SB_URL + '/rest/v1/landing_requests?id=eq.' + requestId, {
+              method: 'PATCH',
+              headers: sbHeaders({ 'Prefer': 'return=minimal' }),
+              body: JSON.stringify({ status: 'converted' })
+            });
+            if (!convRes.ok) throw new Error('Erreur');
             showToast('Demande marquée comme convertie', 'success');
             closeModal('convertModal');
             loadRequests();
@@ -2392,9 +2424,15 @@ Pour renouveler : +225 0576103277</pre>
         return;
       }
 
-      supabase.from('landing_requests').update({ status: newStatus }).eq('id', requestId).then(({ error }) => {
-        if (error) {
-          showToast('Erreur : ' + error.message, 'error');
+      fetch(SB_URL + '/rest/v1/landing_requests?id=eq.' + requestId, {
+        method: 'PATCH',
+        headers: sbHeaders({ 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ status: newStatus })
+      }).then(res => {
+        if (!res.ok) {
+          res.json().then(errData => {
+            showToast('Erreur : ' + (errData.message || 'Erreur'), 'error');
+          }).catch(() => showToast('Erreur inconnue', 'error'));
         } else {
           showToast('Statut mis à jour', 'success');
           loadRequests();
@@ -2405,13 +2443,10 @@ Pour renouveler : +225 0576103277</pre>
     // ---- SUBSCRIPTIONS ----
     async function loadSubscriptions() {
       try {
-        const { data: hotels, error } = await supabase
-          .from('hotels')
-          .select('*')
-          .order('subscription_end', { ascending: true });
-
-        if (error) throw error;
-        const activeHotels = (hotels || []).filter(h => h.is_active !== false);
+        const subRes = await fetch(SB_URL + '/rest/v1/hotels?select=*&order=subscription_end.asc', { headers: sbHeaders() });
+        if (!subRes.ok) throw new Error('Erreur de chargement');
+        const allSubHotels = (await subRes.json()) || [];
+        const activeHotels = allSubHotels.filter(h => h.is_active !== false);
 
         let starterCount = 0, businessCount = 0, enterpriseCount = 0;
         activeHotels.forEach(h => {
@@ -2495,15 +2530,11 @@ Pour renouveler : +225 0576103277</pre>
     // ---- ACTIVITY LOGS ----
     async function loadActivityLogs() {
       try {
-        let query = supabase
-          .from('activity_logs')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
+        let url = SB_URL + '/rest/v1/activity_logs?select=*&order=created_at.desc&limit=100';
 
         const hotelFilter = document.getElementById('activityHotelFilter').value;
         if (hotelFilter) {
-          query = query.eq('hotel_id', hotelFilter);
+          url += '&hotel_id=eq.' + hotelFilter;
         }
 
         const dateFilter = document.getElementById('activityDateFilter').value;
@@ -2512,13 +2543,12 @@ Pour renouveler : +225 0576103277</pre>
           start.setHours(0, 0, 0, 0);
           const end = new Date(dateFilter);
           end.setHours(23, 59, 59, 999);
-          query = query.gte('created_at', start.toISOString()).lte('created_at', end.toISOString());
+          url += '&created_at=gte.' + encodeURIComponent(start.toISOString()) + '&created_at=lte.' + encodeURIComponent(end.toISOString());
         }
 
-        const { data: logs, error } = await query;
-        if (error) throw error;
-
-        allActivityLogs = logs || [];
+        const logsRes = await fetch(url, { headers: sbHeaders() });
+        if (!logsRes.ok) throw new Error('Erreur de chargement');
+        allActivityLogs = (await logsRes.json()) || [];
 
         const tbody = document.getElementById('activityBody');
         if (allActivityLogs.length === 0) {
@@ -2591,8 +2621,16 @@ Pour renouveler : +225 0576103277</pre>
       }
 
       try {
-        const { error } = await supabase.auth.updateUser({ password: newPass });
-        if (error) throw error;
+        const token = getAccessToken();
+        const pwRes = await fetch(SB_URL + '/auth/v1/user', {
+          method: 'PUT',
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: newPass })
+        });
+        if (!pwRes.ok) {
+          const errData = await pwRes.json().catch(() => ({}));
+          throw new Error(errData.msg || errData.error_description || 'Erreur');
+        }
         showToast('Mot de passe mis à jour avec succès', 'success');
         document.getElementById('settingsCurrentPassword').value = '';
         document.getElementById('settingsNewPassword').value = '';
