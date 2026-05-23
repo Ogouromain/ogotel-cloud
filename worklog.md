@@ -262,3 +262,32 @@ Stage Summary:
 - onboarding.html: 5-step wizard (welcome → rooms → team → test reservation → done)
 - 404.html: Gradient 404 text, floating animation, auto-redirect
 - maintenance.html: Dark theme, progress bar, auto-refresh every 30s
+
+---
+Task ID: 6
+Agent: Main Agent
+Task: Vérification et nettoyage de tous les modules + dashboard cleanup
+
+Work Log:
+- Audité 15 fichiers HTML du projet OGOTEL Cloud
+- dashboard.html: 5191 → 2320 lignes (-2872 lignes de code mort supprimées)
+  - Supprimé 4 blocs <script src=CDN> contenant du code mort
+  - Supprimé le 1er bloc script dupliqué
+  - Ajouté logActivity() avec fetch() direct
+  - Ajouté sectionLoaders pour navigation SPA
+  - Corrigé navigateTo() pour appeler sectionLoaders
+  - Zéro CDN Supabase — tout via _SBQuery wrapper → fetch()
+- invoice.html: Vérifié — complet, fonctionnel, fetch() natif ✅
+- onboarding.html: Vérifié — complet, fonctionnel, fetch() natif ✅
+- payment.html: Vérifié — fetch() natif ✅ (pas intégré par demande utilisateur)
+- reset-password.html: Vérifié — pas de CDN ✅
+- email-confirmed.html: Vérifié — pas de CDN ✅
+- 404.html, maintenance.html: Vérifiés — statiques ✅
+- Supprimé 3 fichiers supabase.min.js orphelins
+- Vérifié la cohérence des liens entre toutes les pages
+
+Stage Summary:
+- Tous les modules sont propres (zéro CDN Supabase)
+- Dashboard nettoyé de 2872 lignes de code mort
+- 3 fichiers orphelins supprimés
+- Git push commit e5b41b9
