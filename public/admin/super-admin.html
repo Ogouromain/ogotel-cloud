@@ -912,7 +912,7 @@
     <div class="denied-icon">🚫</div>
     <h1>Accès Refusé</h1>
     <p>Vous n'avez pas les autorisations nécessaires pour accéder à cette page. Seul le propriétaire SaaS peut y accéder.</p>
-    <a href="/auth/login.html">← Retour à la connexion</a>
+    <a href="/login.html">← Retour à la connexion</a>
   </div>
 
   <!-- ==========================================================
@@ -1665,7 +1665,7 @@ Pour renouveler : +225 0576103277</pre>
 
         if (!session) {
           loading.classList.add('hidden');
-          window.location.href = '/auth/login.html';
+          window.location.href = '/login.html';
           return;
         }
 
@@ -1755,7 +1755,7 @@ Pour renouveler : +225 0576103277</pre>
         });
       } catch(e) {}
       localStorage.removeItem('sb-pblizpjhsvctsrzzculc-auth-token');
-      window.location.href = '/auth/login.html';
+      window.location.href = '/login.html';
     }
 
     /* ==============================================================

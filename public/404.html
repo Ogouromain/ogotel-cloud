@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page introuvable | OGOTEL Cloud</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --green: #1B5E20;
+            --green-light: #2E7D32;
+            --green-dark: #0D1F0F;
+            --gold: #F9A825;
+            --gold-light: #FDD835;
+            --gold-soft: #FFF9C4;
+            --dark: #0D1F0F;
+            --white: #FFFFFF;
+            --gray-100: #F5F5F5;
+            --gray-200: #EEEEEE;
+            --gray-400: #9E9E9E;
+            --gray-600: #757575;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: linear-gradient(160deg, #f0f7f0 0%, #e8f5e9 30%, #fffde7 60%, #f1f8e9 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* === Animated Background Shapes === */
+        .bg-shapes {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.06;
+        }
+
+        .shape-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--green);
+            top: -100px;
+            right: -80px;
+            animation: floatShape 20s ease-in-out infinite;
+        }
+
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            background: var(--gold);
+            bottom: -60px;
+            left: -60px;
+            animation: floatShape 25s ease-in-out infinite reverse;
+        }
+
+        .shape-3 {
+            width: 200px;
+            height: 200px;
+            background: var(--green);
+            top: 40%;
+            left: 10%;
+            animation: floatShape 18s ease-in-out infinite 3s;
+        }
+
+        .shape-4 {
+            width: 150px;
+            height: 150px;
+            background: var(--gold);
+            top: 20%;
+            right: 15%;
+            animation: floatShape 22s ease-in-out infinite 5s;
+        }
+
+        .shape-5 {
+            width: 100px;
+            height: 100px;
+            background: var(--green-light);
+            bottom: 20%;
+            right: 25%;
+            animation: floatShape 15s ease-in-out infinite 2s;
+        }
+
+        @keyframes floatShape {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -40px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(15px, 35px) scale(1.03); }
+        }
+
+        /* === Floating Particles === */
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            opacity: 0;
+            animation: particleFloat linear infinite;
+        }
+
+        .particle:nth-child(odd) {
+            background: var(--gold);
+        }
+
+        .particle:nth-child(even) {
+            background: var(--green);
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-duration: 12s; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-duration: 15s; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 35%; animation-duration: 10s; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 50%; animation-duration: 18s; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 65%; animation-duration: 13s; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 75%; animation-duration: 16s; animation-delay: 5s; }
+        .particle:nth-child(7) { left: 85%; animation-duration: 11s; animation-delay: 0.5s; }
+        .particle:nth-child(8) { left: 90%; animation-duration: 14s; animation-delay: 2.5s; }
+
+        @keyframes particleFloat {
+            0% {
+                opacity: 0;
+                transform: translateY(100vh) scale(0);
+            }
+            10% {
+                opacity: 0.6;
+                transform: translateY(80vh) scale(1);
+            }
+            90% {
+                opacity: 0.6;
+                transform: translateY(10vh) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(0vh) scale(0.5);
+            }
+        }
+
+        /* === Main Content === */
+        .content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        /* === Logo === */
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 2rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 8px rgba(27, 94, 32, 0.3));
+        }
+
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 50%, var(--green) 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmerLogo 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmerLogo {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* === Floating Hotel Icon === */
+        .hotel-icon-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .hotel-icon {
+            font-size: 5rem;
+            display: block;
+            animation: floatHotel 4s ease-in-out infinite;
+            filter: drop-shadow(0 10px 30px rgba(27, 94, 32, 0.15));
+        }
+
+        .hotel-icon-glow {
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(circle, rgba(249, 168, 37, 0.12) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes floatHotel {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            25% { transform: translateY(-12px) rotate(2deg); }
+            50% { transform: translateY(-6px) rotate(0deg); }
+            75% { transform: translateY(-14px) rotate(-2deg); }
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* === 404 Number === */
+        .error-code {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(6rem, 15vw, 10rem);
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--green) 0%, #388E3C 25%, var(--gold) 50%, #388E3C 75%, var(--green) 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInUp 0.8s ease-out 0.3s both, gradientShift 6s ease-in-out infinite;
+            margin-bottom: 0.5rem;
+            user-select: none;
+            position: relative;
+        }
+
+        .error-code::after {
+            content: '404';
+            position: absolute;
+            inset: 0;
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(6rem, 15vw, 10rem);
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--green) 0%, #388E3C 25%, var(--gold) 50%, #388E3C 75%, var(--green) 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 6s ease-in-out infinite;
+            filter: blur(20px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* === Text Content === */
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.75rem;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .subtitle {
+            font-size: clamp(0.95rem, 2vw, 1.1rem);
+            color: var(--gray-600);
+            line-height: 1.7;
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.8s ease-out 0.5s both;
+            max-width: 440px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* === Buttons === */
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.9rem 2.2rem;
+            border-radius: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            min-width: 220px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(27, 94, 32, 0.3), 0 1px 3px rgba(27, 94, 32, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(27, 94, 32, 0.4), 0 2px 6px rgba(27, 94, 32, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0px);
+            box-shadow: 0 2px 10px rgba(27, 94, 32, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--green);
+            border: 2px solid rgba(27, 94, 32, 0.25);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(27, 94, 32, 0.06);
+            border-color: var(--green);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary:active {
+            transform: translateY(0px);
+        }
+
+        .btn svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* === Auto-redirect Notice === */
+        .redirect-notice {
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--gray-400);
+            animation: fadeInUp 0.8s ease-out 0.7s both;
+        }
+
+        .redirect-notice .timer {
+            font-weight: 700;
+            color: var(--green);
+            font-variant-numeric: tabular-nums;
+            min-width: 1.2em;
+        }
+
+        .redirect-bar {
+            width: 120px;
+            height: 3px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .redirect-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--green), var(--gold));
+            border-radius: 3px;
+            animation: shrinkBar 15s linear forwards;
+        }
+
+        @keyframes shrinkBar {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        .cancel-redirect {
+            background: none;
+            border: none;
+            color: var(--gray-400);
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+            font-family: 'DM Sans', sans-serif;
+            transition: color 0.2s;
+        }
+
+        .cancel-redirect:hover {
+            color: var(--green);
+        }
+
+        /* === Decorative dots === */
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-top: 2.5rem;
+            animation: fadeInUp 0.8s ease-out 0.8s both;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gold);
+            opacity: 0.4;
+            animation: dotPulse 1.5s ease-in-out infinite;
+        }
+
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+
+        /* === Animations === */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* === Footer === */
+        .footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 1.5rem 2rem;
+            font-size: 0.8rem;
+            color: var(--gray-400);
+            animation: fadeInUp 0.8s ease-out 0.9s both;
+        }
+
+        .footer a {
+            color: var(--green);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* === Responsive === */
+        @media (max-width: 640px) {
+            .content {
+                padding: 1.5rem 1.2rem;
+            }
+
+            .hotel-icon {
+                font-size: 4rem;
+            }
+
+            .buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 320px;
+            }
+
+            .shape-1 { width: 250px; height: 250px; }
+            .shape-2 { width: 180px; height: 180px; }
+        }
+
+        /* === Reduced Motion === */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .redirect-bar-fill {
+                animation: none;
+                width: 0%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background Shapes -->
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+    </div>
+
+    <!-- Floating Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Logo -->
+        <div class="logo">
+            <span class="logo-icon" aria-hidden="true">🏨</span>
+            <span class="logo-text">OGOTEL Cloud</span>
+        </div>
+
+        <!-- Floating Hotel Icon -->
+        <div class="hotel-icon-wrapper" aria-hidden="true">
+            <div class="hotel-icon-glow"></div>
+            <span class="hotel-icon">🏨</span>
+        </div>
+
+        <!-- 404 Code -->
+        <h1 class="error-code" aria-label="Erreur 404">404</h1>
+
+        <!-- Title & Subtitle -->
+        <h2 class="title">Oups ! Page introuvable</h2>
+        <p class="subtitle">
+            La page que vous cherchez n'existe pas ou a été déplacée.
+            Vérifiez l'adresse URL ou retournez à l'accueil.
+        </p>
+
+        <!-- Buttons -->
+        <div class="buttons">
+            <a href="/landing/" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                Retour à l'accueil
+            </a>
+            <a href="/login.html" class="btn btn-secondary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                Se connecter
+            </a>
+        </div>
+
+        <!-- Auto-redirect -->
+        <div class="redirect-notice" id="redirectNotice">
+            <span>Redirection automatique dans</span>
+            <span class="timer" id="timer">15</span>
+            <span>secondes</span>
+        </div>
+        <div class="redirect-bar">
+            <div class="redirect-bar-fill" id="redirectBar"></div>
+        </div>
+        <button class="cancel-redirect" id="cancelBtn" onclick="cancelRedirect()">Annuler la redirection</button>
+
+        <!-- Decorative Dots -->
+        <div class="dots" aria-hidden="true">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        &copy; <span id="year"></span> OGOTEL Cloud &mdash; Gestion hôtelière intelligente &middot;
+        <a href="https://wa.me/2250576103277" target="_blank" rel="noopener">Support</a>
+    </footer>
+
+    <script>
+        // Year
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // Auto-redirect countdown
+        let seconds = 15;
+        let redirectInterval;
+        let cancelled = false;
+
+        function cancelRedirect() {
+            cancelled = true;
+            clearInterval(redirectInterval);
+            const notice = document.getElementById('redirectNotice');
+            const bar = document.getElementById('redirectBar');
+            const btn = document.getElementById('cancelBtn');
+            notice.style.opacity = '0.5';
+            notice.innerHTML = '<span>Redirection annulée</span>';
+            bar.style.display = 'none';
+            btn.style.display = 'none';
+        }
+
+        redirectInterval = setInterval(function () {
+            if (cancelled) return;
+            seconds--;
+            const timerEl = document.getElementById('timer');
+            if (timerEl) timerEl.textContent = seconds;
+
+            if (seconds <= 0) {
+                clearInterval(redirectInterval);
+                window.location.href = '/landing/';
+            }
+        }, 1000);
+
+        // Parallax on mouse move (desktop only)
+        if (window.matchMedia('(pointer: fine)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.addEventListener('mousemove', function (e) {
+                const x = (e.clientX / window.innerWidth - 0.5) * 2;
+                const y = (e.clientY / window.innerHeight - 0.5) * 2;
+
+                const shapes = document.querySelectorAll('.shape');
+                shapes.forEach(function (shape, i) {
+                    const factor = (i + 1) * 5;
+                    shape.style.transform = 'translate(' + (x * factor) + 'px, ' + (y * factor) + 'px)';
+                });
+            });
+        }
+    </script>
+</body>
+</html>

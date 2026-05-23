@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configuration — OGOTEL Cloud</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ========== RESET & BASE ========== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1B5E20;--green-light:#2E7D32;--green-lighter:#4CAF50;
+  --green-pale:#E8F5E9;--green-bg:#F1F8E9;
+  --gold:#F9A825;--gold-light:#FBC02D;--gold-pale:#FFF8E1;
+  --dark:#0D1F0F;--dark-light:#1A3320;
+  --bg:#FAFFFE;--white:#FFFFFF;
+  --gray-50:#F9FAFB;--gray-100:#F3F4F6;--gray-200:#E5E7EB;
+  --gray-300:#D1D5DB;--gray-400:#9CA3AF;--gray-500:#6B7280;
+  --gray-600:#4B5563;--gray-700:#374151;--gray-800:#1F2937;
+  --danger:#EF4444;--success:#10B981;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.07),0 2px 4px -2px rgba(0,0,0,.05);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.08),0 4px 6px -4px rgba(0,0,0,.05);
+  --shadow-xl:0 20px 25px -5px rgba(0,0,0,.08),0 8px 10px -6px rgba(0,0,0,.04);
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:24px;
+  --transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);color:var(--gray-800);
+  min-height:100vh;display:flex;flex-direction:column;
+  overflow-x:hidden;
+}
+h1,h2,h3,h4{font-family:'Playfair Display',serif;color:var(--dark)}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:inherit;border:none;outline:none}
+input,select{font-family:inherit;outline:none}
+
+/* ========== HEADER ========== */
+.onboard-header{
+  background:var(--white);
+  border-bottom:1px solid var(--gray-100);
+  padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:var(--shadow-sm);
+}
+.logo-wrap{display:flex;align-items:center;gap:10px}
+.logo-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--green),var(--green-light));
+  display:flex;align-items:center;justify-content:center;
+  color:var(--white);font-weight:700;font-size:14px;
+  font-family:'Playfair Display',serif;
+  box-shadow:0 2px 8px rgba(27,94,32,.25);
+}
+.logo-text{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--dark)}
+.logo-text span{color:var(--green)}
+.header-step-label{
+  font-size:13px;color:var(--gray-500);
+  display:flex;align-items:center;gap:6px;
+}
+.header-step-label strong{color:var(--green);font-weight:600}
+
+/* ========== PROGRESS BAR ========== */
+.progress-section{
+  background:var(--white);
+  padding:0 24px 20px;
+  border-bottom:1px solid var(--gray-100);
+}
+.progress-track{
+  max-width:520px;margin:0 auto;
+  display:flex;align-items:center;gap:0;
+  position:relative;
+}
+.progress-line-bg{
+  position:absolute;top:15px;left:30px;right:30px;
+  height:3px;background:var(--gray-200);border-radius:4px;
+  z-index:0;
+}
+.progress-line-fill{
+  height:100%;background:linear-gradient(90deg,var(--green),var(--green-lighter));
+  border-radius:4px;transition:width .5s cubic-bezier(.4,0,.2,1);width:0%;
+  box-shadow:0 0 8px rgba(27,94,32,.2);
+}
+.step-dot{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:600;z-index:1;
+  transition:var(--transition);position:relative;
+  background:var(--white);border:2.5px solid var(--gray-300);color:var(--gray-400);
+}
+.step-dot.active{
+  border-color:var(--green);color:var(--white);
+  background:var(--green);
+  box-shadow:0 0 0 4px rgba(27,94,32,.15);
+  animation:pulse-ring 2s ease infinite;
+}
+.step-dot.completed{
+  border-color:var(--green);color:var(--white);
+  background:var(--green);
+}
+.step-dot.completed svg{width:14px;height:14px}
+.step-connector{flex:1;display:flex;align-items:center;justify-content:center}
+.step-labels{
+  display:flex;justify-content:space-between;
+  max-width:520px;margin:8px auto 0;
+}
+.step-label{
+  font-size:11px;color:var(--gray-400);
+  text-align:center;width:60px;
+  transition:var(--transition);
+}
+.step-label.active{color:var(--green);font-weight:600}
+
+@keyframes pulse-ring{
+  0%{box-shadow:0 0 0 0 rgba(27,94,32,.3)}
+  70%{box-shadow:0 0 0 8px rgba(27,94,32,0)}
+  100%{box-shadow:0 0 0 0 rgba(27,94,32,0)}
+}
+
+/* ========== MAIN CONTENT ========== */
+.main-content{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:32px 24px 80px;
+}
+.wizard-container{
+  width:100%;max-width:1100px;
+  display:grid;grid-template-columns:400px 1fr;
+  background:var(--white);border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-xl);
+  overflow:hidden;min-height:560px;
+  position:relative;
+}
+
+/* Left Panel — Illustration */
+.illustration-panel{
+  background:linear-gradient(160deg,var(--dark) 0%,var(--green) 60%,var(--green-light) 100%);
+  padding:48px 40px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  min-height:400px;
+}
+.illustration-panel::before{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:200px;height:200px;border-radius:50%;
+  background:rgba(249,168,37,.08);
+}
+.illustration-panel::after{
+  content:'';position:absolute;bottom:-40px;left:-40px;
+  width:150px;height:150px;border-radius:50%;
+  background:rgba(255,255,255,.03);
+}
+.illust-icon{
+  font-size:100px;line-height:1;
+  margin-bottom:24px;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.2));
+  transition:var(--transition);
+}
+.illust-title{
+  font-family:'Playfair Display',serif;
+  font-size:28px;font-weight:700;
+  color:var(--white);text-align:center;
+  margin-bottom:8px;line-height:1.3;
+}
+.illust-subtitle{
+  font-size:14px;color:rgba(255,255,255,.65);
+  text-align:center;max-width:280px;line-height:1.5;
+}
+.illust-decor{
+  position:absolute;bottom:32px;display:flex;gap:6px;
+}
+.illust-decor span{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.2);
+}
+.illust-decor span.active{
+  background:var(--gold);width:24px;border-radius:4px;
+}
+
+/* Right Panel — Content */
+.content-panel{
+  padding:48px 44px;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;
+}
+.step-content{
+  display:none;
+  animation:fadeSlideIn .5s ease forwards;
+}
+.step-content.active{display:block}
+@keyframes fadeSlideIn{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Step 1 — Welcome */
+.welcome-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green-pale);color:var(--green);
+  padding:6px 14px;border-radius:20px;
+  font-size:13px;font-weight:600;margin-bottom:20px;
+}
+.welcome-title{
+  font-size:32px;font-weight:800;
+  color:var(--dark);margin-bottom:12px;
+  line-height:1.2;
+}
+.welcome-subtitle{
+  font-size:16px;color:var(--gray-500);
+  line-height:1.6;margin-bottom:32px;max-width:440px;
+}
+.welcome-features{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin-bottom:36px;
+}
+.feature-card{
+  padding:16px;border-radius:var(--radius-md);
+  background:var(--gray-50);border:1px solid var(--gray-100);
+  display:flex;align-items:center;gap:12px;
+  transition:var(--transition);
+}
+.feature-card:hover{
+  border-color:var(--green-pale);
+  background:var(--green-bg);
+  transform:translateY(-2px);
+  box-shadow:var(--shadow-md);
+}
+.feature-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;flex-shrink:0;
+}
+.feature-icon.fi-green{background:var(--green-pale)}
+.feature-icon.fi-gold{background:var(--gold-pale)}
+.feature-card-text h4{
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:600;color:var(--dark);margin-bottom:2px;
+}
+.feature-card-text p{
+  font-size:11px;color:var(--gray-400);
+}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 28px;border-radius:var(--radius-sm);
+  font-size:14px;font-weight:600;
+  transition:var(--transition);
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--green),var(--green-light));
+  color:var(--white);
+  box-shadow:0 4px 12px rgba(27,94,32,.25);
+}
+.btn-primary:hover{
+  box-shadow:0 6px 20px rgba(27,94,32,.35);
+  transform:translateY(-1px);
+}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{
+  background:var(--white);color:var(--gray-600);
+  border:1.5px solid var(--gray-200);
+}
+.btn-secondary:hover{
+  border-color:var(--green);color:var(--green);
+  background:var(--green-pale);
+}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold),var(--gold-light));
+  color:var(--dark);
+  box-shadow:0 4px 12px rgba(249,168,37,.3);
+}
+.btn-gold:hover{
+  box-shadow:0 6px 20px rgba(249,168,37,.4);
+  transform:translateY(-1px);
+}
+.btn-sm{padding:8px 18px;font-size:13px;border-radius:8px}
+.btn-lg{padding:16px 36px;font-size:16px;border-radius:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.btn-group{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+
+/* Step Titles (shared) */
+.step-head{margin-bottom:24px}
+.step-head h2{font-size:24px;font-weight:700;margin-bottom:8px;color:var(--dark)}
+.step-head p{font-size:14px;color:var(--gray-500);line-height:1.6}
+
+/* Room type grid */
+.room-type-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  margin-bottom:24px;
+}
+.room-type-card{
+  padding:14px 8px;border-radius:var(--radius-md);
+  background:var(--gray-50);border:2px solid var(--gray-100);
+  text-align:center;transition:var(--transition);cursor:pointer;
+}
+.room-type-card:hover,.room-type-card.selected{
+  border-color:var(--green);background:var(--green-pale);
+}
+.room-type-card .rtc-icon{font-size:28px;margin-bottom:6px}
+.room-type-card .rtc-label{font-size:11px;font-weight:600;color:var(--gray-600)}
+
+/* Forms */
+.form-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  margin-bottom:12px;
+}
+.form-row.full{grid-template-columns:1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{
+  font-size:12px;font-weight:600;color:var(--gray-600);
+  display:flex;align-items:center;gap:4px;
+}
+.form-group label .req{color:var(--danger)}
+.form-input{
+  padding:10px 14px;border:1.5px solid var(--gray-200);
+  border-radius:var(--radius-sm);font-size:14px;
+  color:var(--gray-800);background:var(--white);
+  transition:var(--transition);
+}
+.form-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(27,94,32,.1)}
+.form-input::placeholder{color:var(--gray-300)}
+select.form-input{cursor:pointer;appearance:auto}
+
+/* Added items list */
+.items-list{
+  margin-top:16px;max-height:200px;overflow-y:auto;
+  border-radius:var(--radius-md);
+  border:1px solid var(--gray-100);
+}
+.items-list:empty{display:none}
+.item-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-bottom:1px solid var(--gray-50);
+  font-size:13px;animation:fadeSlideIn .3s ease;
+}
+.item-row:last-child{border-bottom:none}
+.item-info{display:flex;align-items:center;gap:10px}
+.item-info .ii-icon{font-size:18px}
+.item-info .ii-details{display:flex;flex-direction:column}
+.item-info .ii-name{font-weight:600;color:var(--dark)}
+.item-info .ii-meta{font-size:11px;color:var(--gray-400)}
+.item-remove{
+  width:28px;height:28px;border-radius:6px;
+  background:var(--gray-50);color:var(--gray-400);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:var(--transition);
+}
+.item-remove:hover{background:#FEE2E2;color:var(--danger)}
+
+/* Counter badge */
+.counter-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--green-pale);color:var(--green);
+  padding:6px 12px;border-radius:20px;
+  font-size:12px;font-weight:600;
+  margin-top:12px;
+}
+
+/* Team avatars */
+.team-avatars{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:20px;
+}
+.avatar-circle{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--green-pale),var(--green-bg));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;border:2px solid var(--white);
+  box-shadow:var(--shadow-sm);
+}
+.avatar-placeholder{
+  width:44px;height:44px;border-radius:50%;
+  border:2px dashed var(--gray-200);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:var(--gray-300);
+}
+
+/* Mini reservation form */
+.reservation-preview{
+  margin-top:16px;padding:16px;
+  background:var(--gray-50);border-radius:var(--radius-md);
+  border:1px solid var(--gray-100);
+}
+.reservation-preview h4{
+  font-family:'DM Sans',sans-serif;font-size:13px;
+  font-weight:600;color:var(--gray-500);margin-bottom:12px;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.res-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+}
+.res-item{font-size:13px}
+.res-item span{color:var(--gray-400);font-size:11px;display:block;margin-bottom:2px}
+.res-item strong{color:var(--dark);font-weight:600}
+
+/* Step 5 — Done */
+.done-animation{
+  text-align:center;padding:20px 0;
+}
+.confetti-canvas{display:block;margin:0 auto 24px}
+.done-title{
+  font-size:28px;font-weight:800;color:var(--dark);margin-bottom:8px;
+}
+.done-subtitle{font-size:15px;color:var(--gray-500);margin-bottom:32px}
+.summary-card{
+  background:var(--gray-50);border:1.5px solid var(--gray-100);
+  border-radius:var(--radius-lg);padding:24px;
+  max-width:380px;margin:0 auto 32px;
+}
+.summary-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--gray-100);
+}
+.summary-row:last-child{border-bottom:none}
+.summary-icon{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+}
+.summary-icon.si-green{background:var(--green-pale)}
+.summary-icon.si-gold{background:var(--gold-pale)}
+.summary-info{text-align:left}
+.summary-info .si-val{font-size:18px;font-weight:700;color:var(--dark)}
+.summary-info .si-label{font-size:12px;color:var(--gray-400)}
+.summary-status{margin-left:auto}
+.status-check{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--success);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--white);font-size:12px;
+}
+.status-pending{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--gray-100);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--gray-400);font-size:12px;
+}
+
+/* Navigation Footer */
+.nav-footer{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--white);border-top:1px solid var(--gray-100);
+  padding:16px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  z-index:100;
+  box-shadow:0 -2px 10px rgba(0,0,0,.04);
+}
+.nav-footer .skip-btn{
+  font-size:13px;color:var(--gray-400);
+  background:none;padding:8px 16px;border-radius:8px;
+  transition:var(--transition);
+}
+.nav-footer .skip-btn:hover{color:var(--gray-600);background:var(--gray-50)}
+.nav-footer .nav-btns{display:flex;gap:10px}
+
+/* Toast */
+.toast-container{
+  position:fixed;top:80px;right:24px;z-index:9999;
+  display:flex;flex-direction:column;gap:8px;
+}
+.toast{
+  padding:14px 20px;border-radius:var(--radius-md);
+  background:var(--white);box-shadow:var(--shadow-lg);
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:500;
+  animation:toastIn .4s ease;
+  border-left:4px solid var(--green);
+  max-width:360px;
+}
+.toast.error{border-left-color:var(--danger)}
+.toast.success{border-left-color:var(--success)}
+.toast-icon{font-size:18px}
+@keyframes toastIn{
+  from{opacity:0;transform:translateX(40px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+/* Loading spinner */
+.spinner{
+  width:18px;height:18px;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:var(--white);
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ========== CONFETTI ========== */
+#confetti-canvas{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  pointer-events:none;z-index:9998;
+}
+
+/* ========== RESPONSIVE ========== */
+@media(max-width:900px){
+  .wizard-container{
+    grid-template-columns:1fr;
+    max-width:560px;
+  }
+  .illustration-panel{
+    min-height:200px;padding:32px 24px;
+    order:-1;
+  }
+  .illust-icon{font-size:64px;margin-bottom:12px}
+  .illust-title{font-size:22px}
+  .illust-subtitle{font-size:13px}
+  .illust-decor{display:none}
+  .content-panel{padding:32px 24px}
+  .welcome-features{grid-template-columns:1fr}
+  .room-type-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .onboard-header{padding:12px 16px}
+  .logo-text{font-size:17px}
+  .progress-section{padding:0 16px 16px}
+  .step-labels{display:none}
+  .step-dot{width:26px;height:26px;font-size:11px}
+  .main-content{padding:16px 16px 80px}
+  .content-panel{padding:24px 16px}
+  .welcome-title{font-size:24px}
+  .step-head h2{font-size:20px}
+  .btn{padding:10px 20px;font-size:13px}
+  .btn-lg{padding:14px 28px;font-size:15px}
+  .nav-footer{padding:12px 16px}
+  .room-type-grid{grid-template-columns:1fr 1fr}
+  .res-grid{grid-template-columns:1fr}
+}
+
+/* Scrollbar */
+.items-list::-webkit-scrollbar{width:4px}
+.items-list::-webkit-scrollbar-track{background:transparent}
+.items-list::-webkit-scrollbar-thumb{background:var(--gray-200);border-radius:4px}
+.items-list::-webkit-scrollbar-thumb:hover{background:var(--gray-300)}
+</style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header class="onboard-header">
+  <div class="logo-wrap">
+    <div class="logo-icon">O</div>
+    <div class="logo-text">OGO<span>TEL</span> Cloud</div>
+  </div>
+  <div class="header-step-label" id="headerStepLabel">
+    Étape <strong>1</strong> sur 5
+  </div>
+</header>
+
+<!-- ========== PROGRESS BAR ========== -->
+<div class="progress-section">
+  <div class="progress-track">
+    <div class="progress-line-bg"><div class="progress-line-fill" id="progressFill"></div></div>
+    <div class="step-dot active" data-step="1">1</div>
+    <div class="step-connector"></div>
+    <div class="step-dot" data-step="2">2</div>
+    <div class="step-connector"></div>
+    <div class="step-dot" data-step="3">3</div>
+    <div class="step-connector"></div>
+    <div class="step-dot" data-step="4">4</div>
+    <div class="step-connector"></div>
+    <div class="step-dot" data-step="5">5</div>
+  </div>
+  <div class="step-labels">
+    <span class="step-label active" data-step="1">Bienvenue</span>
+    <span class="step-label" data-step="2">Chambres</span>
+    <span class="step-label" data-step="3">Équipe</span>
+    <span class="step-label" data-step="4">Réservation</span>
+    <span class="step-label" data-step="5">Terminé</span>
+  </div>
+</div>
+
+<!-- ========== MAIN ========== -->
+<main class="main-content">
+  <div class="wizard-container">
+
+    <!-- Left Illustration Panel -->
+    <div class="illustration-panel" id="illustPanel">
+      <div class="illust-icon" id="illustIcon">🏨</div>
+      <div class="illust-title" id="illustTitle">Bienvenue</div>
+      <div class="illust-subtitle" id="illustSubtitle">Configurez votre hôtel en quelques étapes simples.</div>
+      <div class="illust-decor" id="illustDecor">
+        <span class="active"></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Right Content Panel -->
+    <div class="content-panel">
+
+      <!-- STEP 1: Welcome -->
+      <div class="step-content active" data-step="1">
+        <div class="welcome-badge">✨ Nouveau compte</div>
+        <h1 class="welcome-title">Bienvenue dans OGOTEL Cloud !</h1>
+        <p class="welcome-subtitle">Configurez votre hôtel en quelques étapes simples et commencez à gérer vos réservations comme un professionnel.</p>
+        <div class="welcome-features">
+          <div class="feature-card">
+            <div class="feature-icon fi-green">🛏️</div>
+            <div class="feature-card-text">
+              <h4>Gestion des chambres</h4>
+              <p>Ajoutez et gérez vos chambres</p>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-gold">📋</div>
+            <div class="feature-card-text">
+              <h4>Réservations</h4>
+              <p>Suivi en temps réel</p>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-gold">👥</div>
+            <div class="feature-card-text">
+              <h4>Équipe</h4>
+              <p>Gérez votre personnel</p>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-green">📊</div>
+            <div class="feature-card-text">
+              <h4>Tableau de bord</h4>
+              <p>Analyses et statistiques</p>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="goToStep(2)">
+          Commencer la configuration
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- STEP 2: Rooms -->
+      <div class="step-content" data-step="2">
+        <div class="step-head">
+          <h2>Ajoutez vos chambres 🛏️</h2>
+          <p>Commencez par ajouter les chambres de votre hôtel. Vous pourrez modifier les détails plus tard.</p>
+        </div>
+        <div class="room-type-grid" id="roomTypeGrid">
+          <div class="room-type-card" data-type="Standard" onclick="selectRoomType(this)">
+            <div class="rtc-icon">🛏️</div>
+            <div class="rtc-label">Standard</div>
+          </div>
+          <div class="room-type-card" data-type="Deluxe" onclick="selectRoomType(this)">
+            <div class="rtc-icon">🌟</div>
+            <div class="rtc-label">Deluxe</div>
+          </div>
+          <div class="room-type-card" data-type="Suite" onclick="selectRoomType(this)">
+            <div class="rtc-icon">👑</div>
+            <div class="rtc-label">Suite</div>
+          </div>
+          <div class="room-type-card" data-type="Double" onclick="selectRoomType(this)">
+            <div class="rtc-icon">🛏️</div>
+            <div class="rtc-label">Double</div>
+          </div>
+        </div>
+        <form id="roomForm" onsubmit="addRoom(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>N° Chambre <span class="req">*</span></label>
+              <input type="text" class="form-input" id="roomNumber" placeholder="Ex: 101" required>
+            </div>
+            <div class="form-group">
+              <label>Étage</label>
+              <input type="number" class="form-input" id="roomFloor" placeholder="Ex: 1" min="0">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Type <span class="req">*</span></label>
+              <select class="form-input" id="roomType" required>
+                <option value="">Sélectionner...</option>
+                <option value="Standard">Standard</option>
+                <option value="Deluxe">Deluxe</option>
+                <option value="Suite">Suite</option>
+                <option value="Double">Double</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Prix / nuit (€) <span class="req">*</span></label>
+              <input type="number" class="form-input" id="roomPrice" placeholder="Ex: 89" min="0" step="0.01" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="addRoomBtn">
+            + Ajouter une chambre
+          </button>
+        </form>
+        <div class="items-list" id="roomsList"></div>
+        <div class="counter-badge" id="roomsCounter" style="display:none">
+          <span>🛏️</span> <span id="roomsCount">0</span> chambre(s) ajoutée(s)
+        </div>
+      </div>
+
+      <!-- STEP 3: Team -->
+      <div class="step-content" data-step="3">
+        <div class="step-head">
+          <h2>Invitez votre équipe 👥</h2>
+          <p>Ajoutez les membres de votre équipe (réceptionnistes, managers).</p>
+        </div>
+        <div class="team-avatars" id="teamAvatars">
+          <div class="avatar-placeholder">+</div>
+        </div>
+        <form id="staffForm" onsubmit="addStaff(event)">
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Nom complet <span class="req">*</span></label>
+              <input type="text" class="form-input" id="staffName" placeholder="Ex: Jean Dupont" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Poste <span class="req">*</span></label>
+              <select class="form-input" id="staffPosition" required>
+                <option value="">Sélectionner...</option>
+                <option value="Réceptionniste">Réceptionniste</option>
+                <option value="Manager">Manager</option>
+                <option value="Concierge">Concierge</option>
+                <option value="Ménage">Ménage</option>
+                <option value="Chef cuisinier">Chef cuisinier</option>
+                <option value="Administrateur">Administrateur</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Téléphone</label>
+              <input type="tel" class="form-input" id="staffPhone" placeholder="Ex: +33 6 12 34 56 78">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="addStaffBtn">
+            + Ajouter un membre
+          </button>
+        </form>
+        <div class="items-list" id="staffList"></div>
+        <div class="counter-badge" id="staffCounter" style="display:none">
+          <span>👥</span> <span id="staffCount">0</span> membre(s) ajouté(s)
+        </div>
+      </div>
+
+      <!-- STEP 4: Test Reservation -->
+      <div class="step-content" data-step="4">
+        <div class="step-head">
+          <h2>Créez votre première réservation 📋</h2>
+          <p>Testez le système en créant une réservation fictive.</p>
+        </div>
+        <form id="reservationForm" onsubmit="createReservation(event)">
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Nom du client <span class="req">*</span></label>
+              <input type="text" class="form-input" id="resClient" placeholder="Ex: Marie Martin" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Chambre <span class="req">*</span></label>
+              <select class="form-input" id="resRoom" required>
+                <option value="">Sélectionner...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Nombre de personnes</label>
+              <input type="number" class="form-input" id="resGuests" placeholder="2" min="1" max="10" value="2">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date d'arrivée <span class="req">*</span></label>
+              <input type="date" class="form-input" id="resCheckin" required>
+            </div>
+            <div class="form-group">
+              <label>Date de départ <span class="req">*</span></label>
+              <input type="date" class="form-input" id="resCheckout" required>
+            </div>
+          </div>
+          <div class="form-row full">
+            <div class="form-group">
+              <label>Notes</label>
+              <input type="text" class="form-input" id="resNotes" placeholder="Réservation de test — demande de vue jardin">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="addResBtn">
+            📋 Créer une réservation test
+          </button>
+        </form>
+        <div class="reservation-preview" id="resPreview" style="display:none">
+          <h4>Résumé de la réservation</h4>
+          <div class="res-grid">
+            <div class="res-item"><span>Client</span><strong id="prevClient">—</strong></div>
+            <div class="res-item"><span>Chambre</span><strong id="prevRoom">—</strong></div>
+            <div class="res-item"><span>Arrivée</span><strong id="prevCheckin">—</strong></div>
+            <div class="res-item"><span>Départ</span><strong id="prevCheckout">—</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5: Done -->
+      <div class="step-content" data-step="5">
+        <div class="done-animation">
+          <canvas id="confetti-canvas" class="confetti-canvas" width="320" height="160"></canvas>
+          <h2 class="done-title">🎉 Votre hôtel est prêt !</h2>
+          <p class="done-subtitle">Toutes les configurations de base sont terminées.</p>
+        </div>
+        <div class="summary-card">
+          <div class="summary-row">
+            <div class="summary-icon si-green">🛏️</div>
+            <div class="summary-info">
+              <div class="si-val" id="sumRooms">0</div>
+              <div class="si-label">chambres ajoutées</div>
+            </div>
+            <div class="summary-status" id="sumRoomsStatus"></div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-icon si-gold">👥</div>
+            <div class="summary-info">
+              <div class="si-val" id="sumStaff">0</div>
+              <div class="si-label">membres d'équipe</div>
+            </div>
+            <div class="summary-status" id="sumStaffStatus"></div>
+          </div>
+          <div class="summary-row">
+            <div class="summary-icon si-green">📋</div>
+            <div class="summary-info">
+              <div class="si-val" id="sumRes">Réservation test</div>
+              <div class="si-label">première réservation</div>
+            </div>
+            <div class="summary-status" id="sumResStatus"></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+          <button class="btn btn-primary btn-lg" onclick="window.location.href='/dashboard.html'">
+            Accéder à mon tableau de bord
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn btn-secondary" onclick="window.location.href='/dashboard.html?section=rooms'">
+            Continuer la configuration
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- ========== NAV FOOTER ========== -->
+<div class="nav-footer" id="navFooter">
+  <button class="skip-btn" id="skipBtn" onclick="skipStep()" style="visibility:hidden">
+    Passer cette étape →
+  </button>
+  <div class="nav-btns">
+    <button class="btn btn-secondary" id="prevBtn" onclick="prevStep()" style="visibility:hidden">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Étape précédente
+    </button>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+      Étape suivante
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+
+// ===== STATE =====
+let currentStep = 1;
+const totalSteps = 5;
+const addedRooms = [];
+const addedStaff = [];
+let testReservation = null;
+
+// ===== SUPABASE HELPERS =====
+async function supabaseInsert(table, data) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || `Erreur ${res.status}`);
+    }
+    return await res.json();
+  } catch (e) {
+    console.error(`Supabase insert [${table}] error:`, e);
+    throw e;
+  }
+}
+
+async function supabaseUpdate(table, id, data) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(`Erreur ${res.status}`);
+    return await res.json();
+  } catch (e) {
+    console.error(`Supabase update [${table}] error:`, e);
+    throw e;
+  }
+}
+
+// ===== TOAST =====
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(40px)'; toast.style.transition = 'all .3s ease'; }, 3000);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ===== NAVIGATION =====
+const stepData = [
+  { icon: '🎉', title: 'Bienvenue', subtitle: 'Configurez votre hôtel en quelques étapes simples.', skip: false },
+  { icon: '🛏️', title: 'Vos chambres', subtitle: 'Ajoutez les chambres de votre hôtel.', skip: true, skipText: 'Je ferai cela plus tard' },
+  { icon: '👥', title: 'Votre équipe', subtitle: 'Ajoutez les membres de votre équipe.', skip: true, skipText: 'Je ferai cela plus tard' },
+  { icon: '📋', title: 'Réservation test', subtitle: 'Créez une réservation fictive pour tester.', skip: true, skipText: 'Passer cette étape' },
+  { icon: '🚀', title: 'Terminé !', subtitle: 'Votre hôtel est prêt.', skip: false },
+];
+
+function updateUI() {
+  // Header
+  document.getElementById('headerStepLabel').innerHTML = `Étape <strong>${currentStep}</strong> sur ${totalSteps}`;
+
+  // Progress bar
+  const pct = ((currentStep - 1) / (totalSteps - 1)) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Dots
+  document.querySelectorAll('.step-dot').forEach(dot => {
+    const s = parseInt(dot.dataset.step);
+    dot.classList.remove('active', 'completed');
+    if (s < currentStep) {
+      dot.classList.add('completed');
+      dot.innerHTML = '<svg width="14" height="14" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>';
+    } else if (s === currentStep) {
+      dot.classList.add('active');
+      dot.textContent = s;
+    } else {
+      dot.textContent = s;
+    }
+  });
+
+  // Labels
+  document.querySelectorAll('.step-label').forEach(lbl => {
+    const s = parseInt(lbl.dataset.step);
+    lbl.classList.toggle('active', s <= currentStep);
+  });
+
+  // Illustration
+  const sd = stepData[currentStep - 1];
+  document.getElementById('illustIcon').textContent = sd.icon;
+  document.getElementById('illustTitle').textContent = sd.title;
+  document.getElementById('illustSubtitle').textContent = sd.subtitle;
+
+  // Decor dots
+  const dots = document.querySelectorAll('.illust-decor span');
+  dots.forEach((d, i) => d.classList.toggle('active', i === currentStep - 1));
+
+  // Step content
+  document.querySelectorAll('.step-content').forEach(sc => {
+    sc.classList.toggle('active', parseInt(sc.dataset.step) === currentStep);
+  });
+
+  // Nav buttons
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const skipBtn = document.getElementById('skipBtn');
+
+  prevBtn.style.visibility = currentStep > 1 && currentStep < 5 ? 'visible' : 'hidden';
+  
+  if (currentStep === 5) {
+    nextBtn.style.visibility = 'hidden';
+    skipBtn.style.visibility = 'hidden';
+  } else {
+    nextBtn.style.visibility = 'visible';
+    nextBtn.textContent = '';
+    nextBtn.innerHTML = 'Étape suivante <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+  }
+
+  if (sd.skip) {
+    skipBtn.style.visibility = 'visible';
+    skipBtn.textContent = sd.skipText + ' →';
+  } else {
+    skipBtn.style.visibility = 'hidden';
+  }
+
+  // Step-specific setup
+  if (currentStep === 4) populateRoomSelect();
+  if (currentStep === 5) buildSummary();
+}
+
+function goToStep(step) {
+  if (step < 1 || step > totalSteps) return;
+  currentStep = step;
+  updateUI();
+  if (step === 5) setTimeout(launchConfetti, 300);
+}
+
+function nextStep() {
+  if (currentStep < totalSteps) goToStep(currentStep + 1);
+}
+
+function prevStep() {
+  if (currentStep > 1) goToStep(currentStep - 1);
+}
+
+function skipStep() {
+  nextStep();
+}
+
+// ===== ROOM TYPE SELECT =====
+function selectRoomType(card) {
+  document.querySelectorAll('.room-type-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  const type = card.dataset.type;
+  document.getElementById('roomType').value = type;
+}
+
+// ===== ADD ROOM =====
+async function addRoom(e) {
+  e.preventDefault();
+  const number = document.getElementById('roomNumber').value.trim();
+  const floor = parseInt(document.getElementById('roomFloor').value) || 0;
+  const type = document.getElementById('roomType').value;
+  const price = parseFloat(document.getElementById('roomPrice').value);
+
+  if (!number || !type || isNaN(price)) {
+    showToast('Veuillez remplir tous les champs obligatoires.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('addRoomBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Ajout...';
+
+  const room = { number, floor, type, price, status: 'available' };
+  addedRooms.push(room);
+
+  try {
+    await supabaseInsert('rooms', {
+      room_number: number,
+      floor,
+      room_type: type,
+      price_per_night: price,
+      status: 'available',
+      hotel_id: getCurrentHotelId()
+    });
+    showToast(`Chambre ${number} (${type}) ajoutée avec succès !`);
+  } catch (err) {
+    // Save locally even if Supabase fails
+    showToast(`Chambre ${number} ajoutée localement.`, 'error');
+  }
+
+  renderRooms();
+  document.getElementById('roomForm').reset();
+  document.querySelectorAll('.room-type-card').forEach(c => c.classList.remove('selected'));
+  btn.disabled = false;
+  btn.textContent = '+ Ajouter une chambre';
+}
+
+function removeRoom(index) {
+  addedRooms.splice(index, 1);
+  renderRooms();
+}
+
+const roomTypeIcons = { Standard: '🛏️', Deluxe: '🌟', Suite: '👑', Double: '🛏️' };
+
+function renderRooms() {
+  const list = document.getElementById('roomsList');
+  const counter = document.getElementById('roomsCounter');
+  list.innerHTML = addedRooms.map((r, i) => `
+    <div class="item-row">
+      <div class="item-info">
+        <span class="ii-icon">${roomTypeIcons[r.type] || '🛏️'}</span>
+        <div class="ii-details">
+          <span class="ii-name">Chambre ${r.number} — ${r.type}</span>
+          <span class="ii-meta">Étage ${r.floor} · ${r.price}€/nuit</span>
+        </div>
+      </div>
+      <button class="item-remove" onclick="removeRoom(${i})" title="Supprimer">✕</button>
+    </div>
+  `).join('');
+  counter.style.display = addedRooms.length ? 'inline-flex' : 'none';
+  document.getElementById('roomsCount').textContent = addedRooms.length;
+}
+
+// ===== ADD STAFF =====
+async function addStaff(e) {
+  e.preventDefault();
+  const name = document.getElementById('staffName').value.trim();
+  const position = document.getElementById('staffPosition').value;
+  const phone = document.getElementById('staffPhone').value.trim();
+
+  if (!name || !position) {
+    showToast('Veuillez remplir tous les champs obligatoires.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('addStaffBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Ajout...';
+
+  const staff = { name, position, phone };
+  addedStaff.push(staff);
+
+  try {
+    await supabaseInsert('staff', {
+      name,
+      position,
+      phone,
+      hotel_id: getCurrentHotelId()
+    });
+    showToast(`${name} a été ajouté(e) à l'équipe !`);
+  } catch (err) {
+    showToast(`${name} ajouté(e) localement.`, 'error');
+  }
+
+  renderStaff();
+  renderTeamAvatars();
+  document.getElementById('staffForm').reset();
+  btn.disabled = false;
+  btn.textContent = '+ Ajouter un membre';
+}
+
+function removeStaff(index) {
+  addedStaff.splice(index, 1);
+  renderStaff();
+  renderTeamAvatars();
+}
+
+const positionIcons = {
+  'Réceptionniste': '🛎️', 'Manager': '👔', 'Concierge': '🗝️',
+  'Ménage': '🧹', 'Chef cuisinier': '👨‍🍳', 'Administrateur': '⚙️'
+};
+
+function renderStaff() {
+  const list = document.getElementById('staffList');
+  const counter = document.getElementById('staffCounter');
+  list.innerHTML = addedStaff.map((s, i) => `
+    <div class="item-row">
+      <div class="item-info">
+        <span class="ii-icon">${positionIcons[s.position] || '👤'}</span>
+        <div class="ii-details">
+          <span class="ii-name">${s.name} — ${s.position}</span>
+          <span class="ii-meta">${s.phone || 'Pas de téléphone'}</span>
+        </div>
+      </div>
+      <button class="item-remove" onclick="removeStaff(${i})" title="Supprimer">✕</button>
+    </div>
+  `).join('');
+  counter.style.display = addedStaff.length ? 'inline-flex' : 'none';
+  document.getElementById('staffCount').textContent = addedStaff.length;
+}
+
+function renderTeamAvatars() {
+  const container = document.getElementById('teamAvatars');
+  container.innerHTML = addedStaff.map(s => `
+    <div class="avatar-circle" title="${s.name} — ${s.position}">${positionIcons[s.position] || '👤'}</div>
+  `).join('') + (addedStaff.length < 6 ? '<div class="avatar-placeholder">+</div>' : '');
+}
+
+// ===== RESERVATION =====
+function populateRoomSelect() {
+  const sel = document.getElementById('resRoom');
+  sel.innerHTML = '<option value="">Sélectionner...</option>';
+  addedRooms.forEach(r => {
+    sel.innerHTML += `<option value="${r.number}">Chambre ${r.number} (${r.type}) — ${r.price}€/nuit</option>`;
+  });
+  if (addedRooms.length === 0) {
+    sel.innerHTML = '<option value="">Aucune chambre ajoutée</option>';
+  }
+}
+
+async function createReservation(e) {
+  e.preventDefault();
+  const client = document.getElementById('resClient').value.trim();
+  const room = document.getElementById('resRoom').value;
+  const guests = parseInt(document.getElementById('resGuests').value) || 2;
+  const checkin = document.getElementById('resCheckin').value;
+  const checkout = document.getElementById('resCheckout').value;
+  const notes = document.getElementById('resNotes').value.trim();
+
+  if (!client || !room || !checkin || !checkout) {
+    showToast('Veuillez remplir tous les champs obligatoires.', 'error');
+    return;
+  }
+  if (new Date(checkout) <= new Date(checkin)) {
+    showToast('La date de départ doit être après la date d\'arrivée.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('addResBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Création...';
+
+  testReservation = { client, room, guests, checkin, checkout, notes };
+
+  try {
+    await supabaseInsert('reservations', {
+      client_name: client,
+      room_number: room,
+      guests,
+      check_in: checkin,
+      check_out: checkout,
+      notes,
+      status: 'confirmed',
+      hotel_id: getCurrentHotelId()
+    });
+    showToast('Réservation test créée avec succès !');
+  } catch (err) {
+    showToast('Réservation créée localement.', 'error');
+  }
+
+  // Show preview
+  document.getElementById('resPreview').style.display = 'block';
+  document.getElementById('prevClient').textContent = client;
+  document.getElementById('prevRoom').textContent = 'Chambre ' + room;
+  document.getElementById('prevCheckin').textContent = formatDate(checkin);
+  document.getElementById('prevCheckout').textContent = formatDate(checkout);
+
+  btn.disabled = false;
+  btn.textContent = '✅ Réservation créée';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = '📋 Créer une réservation test';
+    btn.disabled = false;
+  }, 3000);
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// ===== SUMMARY (Step 5) =====
+function buildSummary() {
+  document.getElementById('sumRooms').textContent = addedRooms.length;
+  document.getElementById('sumStaff').textContent = addedStaff.length;
+  
+  const roomsStatus = document.getElementById('sumRoomsStatus');
+  roomsStatus.innerHTML = addedRooms.length > 0
+    ? '<div class="status-check">✓</div>'
+    : '<div class="status-pending">—</div>';
+
+  const staffStatus = document.getElementById('sumStaffStatus');
+  staffStatus.innerHTML = addedStaff.length > 0
+    ? '<div class="status-check">✓</div>'
+    : '<div class="status-pending">—</div>';
+
+  const resStatus = document.getElementById('sumResStatus');
+  resStatus.innerHTML = testReservation
+    ? '<div class="status-check">✓</div>'
+    : '<div class="status-pending">—</div>';
+}
+
+// ===== CONFETTI =====
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 320;
+  canvas.height = 160;
+
+  const colors = ['#1B5E20', '#F9A825', '#4CAF50', '#FFD54F', '#81C784', '#0D1F0F', '#FFEB3B'];
+  const particles = [];
+
+  for (let i = 0; i < 80; i++) {
+    particles.push({
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      vx: (Math.random() - 0.5) * 12,
+      vy: (Math.random() - 0.7) * 10,
+      size: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 12,
+      alpha: 1,
+      gravity: 0.15
+    });
+  }
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      if (p.alpha <= 0) return;
+      alive = true;
+      p.x += p.vx;
+      p.vy += p.gravity;
+      p.y += p.vy;
+      p.rotation += p.rotSpeed;
+      p.alpha -= 0.008;
+      p.vx *= 0.99;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.rotation * Math.PI) / 180);
+      ctx.globalAlpha = Math.max(0, p.alpha);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      ctx.restore();
+    });
+    frame++;
+    if (alive && frame < 300) requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+// ===== HELPERS =====
+function getCurrentHotelId() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('hotel_id') || 'default';
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  updateUI();
+
+  // Set default dates for reservation
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfter = new Date(today);
+  dayAfter.setDate(dayAfter.getDate() + 3);
+
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('resCheckin').value = fmt(tomorrow);
+  document.getElementById('resCheckout').value = fmt(dayAfter);
+});
+</script>
+</body>
+</html>

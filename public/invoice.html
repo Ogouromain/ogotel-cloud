@@ -1,0 +1,1436 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║                OGOTEL CLOUD — FACTURE / REÇU                         ║
+║         Invoice & Receipt Print Page — Standalone HTML              ║
+║                     © 2025 OGOTEL Cloud                              ║
+╚══════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facture — OGOTEL Cloud</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Playfair+Display:wght@0,700;0,800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ════════════════════════════════════════════
+       RESET & BASE
+       ════════════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --green: #1B5E20;
+      --green-light: #2E7D32;
+      --green-pale: #E8F5E9;
+      --green-bg: #F1F8E9;
+      --gold: #F9A825;
+      --gold-light: #FDD835;
+      --gold-pale: #FFF8E1;
+      --white: #FFFFFF;
+      --gray: #F5F5F5;
+      --gray-100: #F0F0F0;
+      --gray-200: #E0E0E0;
+      --gray-300: #BDBDBD;
+      --gray-400: #9E9E9E;
+      --gray-500: #757575;
+      --gray-600: #616161;
+      --gray-700: #424242;
+      --gray-800: #212121;
+      --text: #1a1a1a;
+      --text2: #555;
+      --text3: #888;
+      --danger: #D32F2F;
+      --success: #2E7D32;
+      --radius: 10px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--gray);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ════════════════════════════════════════════
+       ACTION BAR (hidden on print)
+       ════════════════════════════════════════════ */
+    .action-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--white);
+      border-bottom: 1px solid var(--gray-200);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .action-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .action-bar-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .action-bar-logo svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .action-bar-logo span {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--green);
+    }
+
+    .action-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--white);
+    }
+    .btn-primary:hover { background: var(--green-light); }
+
+    .btn-secondary {
+      background: var(--white);
+      color: var(--gray-700);
+      border: 1px solid var(--gray-200);
+    }
+    .btn-secondary:hover { background: var(--gray-100); border-color: var(--gray-300); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      padding: 8px 12px;
+    }
+    .btn-ghost:hover { background: var(--gray-100); color: var(--text); }
+
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* ════════════════════════════════════════════
+       INVOICE CONTAINER (A4-like)
+       ════════════════════════════════════════════ */
+    .invoice-wrapper {
+      max-width: 800px;
+      margin: 32px auto;
+      padding: 0 16px;
+    }
+
+    .invoice-page {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    /* ════════════════════════════════════════════
+       HEADER
+       ════════════════════════════════════════════ */
+    .invoice-header {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
+      color: var(--white);
+      padding: 32px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .invoice-header::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+    }
+
+    .invoice-header::after {
+      content: '';
+      position: absolute;
+      bottom: -60px;
+      right: 60px;
+      width: 160px;
+      height: 160px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 50%;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--white);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .brand-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .brand-text h1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-top: 1px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .invoice-title-block {
+      text-align: right;
+    }
+
+    .invoice-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.7;
+    }
+
+    .invoice-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .header-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      position: relative;
+      z-index: 1;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .meta-item {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .meta-item strong {
+      font-weight: 600;
+    }
+
+    .meta-item .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.6;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-paid {
+      background: rgba(255,255,255,0.2);
+      color: var(--white);
+    }
+
+    .status-partial {
+      background: var(--gold);
+      color: var(--gray-800);
+    }
+
+    .status-pending {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.9);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ════════════════════════════════════════════
+       PARTIES SECTION
+       ════════════════════════════════════════════ */
+    .parties-section {
+      padding: 32px 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+    }
+
+    .party-block h3 {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--green);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid var(--green);
+      display: inline-block;
+    }
+
+    .party-block .name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 8px;
+    }
+
+    .party-block .detail {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.7;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .party-block .detail svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      margin-top: 3px;
+      color: var(--green);
+    }
+
+    /* ════════════════════════════════════════════
+       TABLE
+       ════════════════════════════════════════════ */
+    .table-section {
+      padding: 0 40px 32px;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .items-table thead th {
+      background: var(--green);
+      color: var(--white);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .items-table thead th:last-child {
+      text-align: right;
+    }
+
+    .items-table thead th:nth-child(2),
+    .items-table thead th:nth-child(3) {
+      text-align: center;
+    }
+
+    .items-table tbody td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--gray-100);
+      vertical-align: top;
+    }
+
+    .items-table tbody td:last-child {
+      text-align: right;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .items-table tbody td:nth-child(2),
+    .items-table tbody td:nth-child(3) {
+      text-align: center;
+      color: var(--text2);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .items-table tbody tr:hover {
+      background: var(--green-bg);
+    }
+
+    .item-description {
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .item-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    /* ════════════════════════════════════════════
+       TOTALS
+       ════════════════════════════════════════════ */
+    .totals-section {
+      padding: 0 40px 32px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .totals-box {
+      width: 300px;
+    }
+
+    .totals-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+
+    .totals-row .label {
+      color: var(--text2);
+    }
+
+    .totals-row .value {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .totals-divider {
+      border: none;
+      border-top: 1px dashed var(--gray-300);
+      margin: 6px 0;
+    }
+
+    .totals-row.grand {
+      padding: 14px 0;
+      margin-top: 4px;
+      border-top: 3px solid var(--green);
+    }
+
+    .totals-row.grand .label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .totals-row.grand .value {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    .totals-row.paid-row .value {
+      color: var(--success);
+    }
+
+    .totals-row.remaining-row .value {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    /* ════════════════════════════════════════════
+       PAYMENT INFO
+       ════════════════════════════════════════════ */
+    .payment-section {
+      margin: 0 40px 32px;
+      background: var(--gray);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .payment-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--white);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .payment-icon svg {
+      width: 22px;
+      height: 22px;
+      color: var(--green);
+    }
+
+    .payment-text h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 2px;
+    }
+
+    .payment-text p {
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    .payment-methods {
+      display: flex;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .pay-method-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      background: var(--white);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--gray-700);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .pay-method-badge.orange { border-left: 3px solid #FF6600; }
+    .pay-method-badge.mtn { border-left: 3px solid #FFCC00; }
+    .pay-method-badge.wave { border-left: 3px solid #1DC3E0; }
+    .pay-method-badge.cash { border-left: 3px solid var(--green); }
+
+    /* ════════════════════════════════════════════
+       FOOTER
+       ════════════════════════════════════════════ */
+    .invoice-footer {
+      background: var(--gray-100);
+      padding: 24px 40px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .footer-conditions {
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .footer-conditions strong {
+      color: var(--gray-600);
+    }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid var(--gray-200);
+    }
+
+    .footer-brand {
+      font-size: 12px;
+      color: var(--gray-500);
+    }
+
+    .footer-brand strong {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .footer-support {
+      font-size: 11px;
+      color: var(--text3);
+    }
+
+    .footer-support a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-support a:hover {
+      text-decoration: underline;
+    }
+
+    /* ════════════════════════════════════════════
+       LOADING & ERROR STATES
+       ════════════════════════════════════════════ */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 24px;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--gray-200);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 14px;
+      color: var(--text3);
+    }
+
+    .error-state {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      gap: 12px;
+      text-align: center;
+    }
+
+    .error-state svg {
+      width: 48px;
+      height: 48px;
+      color: var(--danger);
+    }
+
+    .error-state h3 {
+      font-size: 16px;
+      color: var(--gray-700);
+    }
+
+    .error-state p {
+      font-size: 13px;
+      color: var(--text3);
+      max-width: 400px;
+    }
+
+    /* ════════════════════════════════════════════
+       RESPONSIVE
+       ════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .action-bar {
+        padding: 10px 12px;
+        gap: 8px;
+      }
+
+      .action-bar-logo span { display: none; }
+
+      .btn { padding: 7px 12px; font-size: 12px; }
+      .btn .btn-text-full { display: none; }
+      .btn .btn-text-short { display: inline; }
+
+      .invoice-wrapper { margin: 16px auto; padding: 0 8px; }
+
+      .invoice-header { padding: 24px 20px; }
+
+      .header-top { flex-direction: column; gap: 16px; }
+      .invoice-title-block { text-align: left; }
+      .invoice-title { font-size: 28px; }
+
+      .header-meta {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+
+      .parties-section {
+        grid-template-columns: 1fr;
+        padding: 24px 20px;
+        gap: 24px;
+      }
+
+      .table-section { padding: 0 20px 24px; overflow-x: auto; }
+
+      .items-table { min-width: 480px; }
+      .items-table thead th,
+      .items-table tbody td { padding: 10px 12px; }
+
+      .totals-section { padding: 0 20px 24px; }
+      .totals-box { width: 100%; }
+
+      .payment-section {
+        margin: 0 20px 24px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .payment-methods {
+        margin-left: 0;
+        flex-wrap: wrap;
+      }
+
+      .invoice-footer { padding: 20px; }
+
+      .footer-bottom {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+      }
+    }
+
+    /* ════════════════════════════════════════════
+       PRINT STYLES
+       ════════════════════════════════════════════ */
+    @media print {
+      @page {
+        size: A4;
+        margin: 12mm;
+      }
+
+      body {
+        background: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .action-bar {
+        display: none !important;
+      }
+
+      .invoice-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+
+      .invoice-page {
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+
+      .invoice-header {
+        background: var(--green) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        padding: 24px 0 !important;
+      }
+
+      .items-table thead th {
+        background: var(--green) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color: white !important;
+      }
+
+      .totals-row.grand {
+        border-top: 3px solid var(--green) !important;
+      }
+
+      .payment-section {
+        background: var(--gray) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .invoice-footer {
+        background: var(--gray-100) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .status-badge {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .pay-method-badge {
+        box-shadow: none !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Prevent page breaks inside important sections */
+      .parties-section,
+      .items-table thead,
+      .totals-box {
+        page-break-inside: avoid;
+      }
+
+      /* No link styling */
+      a { color: inherit !important; text-decoration: none !important; }
+    }
+
+    /* Hide short text on desktop, show full */
+    .btn .btn-text-short { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       ACTION BAR
+       ═══════════════════════════════════════════ -->
+  <div class="action-bar" id="actionBar">
+    <div class="action-bar-left">
+      <a href="/dashboard.html" class="action-bar-logo">
+        <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="30" height="30" rx="6" fill="#1B5E20"/>
+          <path d="M8 22V10h2v12H8zm4-4V10h2v8h-2zm4-6v10h2V12h-2zm4 2v8h2v-8h-2z" fill="#F9A825"/>
+        </svg>
+        <span>OGOTEL Cloud</span>
+      </a>
+    </div>
+    <div class="action-bar-right">
+      <a href="/dashboard.html" class="btn btn-ghost">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        <span class="btn-text-full">Retour au dashboard</span>
+        <span class="btn-text-short">Retour</span>
+      </a>
+      <button class="btn btn-secondary" onclick="downloadPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span class="btn-text-full">Télécharger PDF</span>
+        <span class="btn-text-short">PDF</span>
+      </button>
+      <button class="btn btn-primary" onclick="window.print()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span class="btn-text-full">Imprimer</span>
+        <span class="btn-text-short">Imprimer</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       INVOICE WRAPPER
+       ═══════════════════════════════════════════ -->
+  <div class="invoice-wrapper">
+
+    <!-- LOADING STATE -->
+    <div class="invoice-page" id="loadingState">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p class="loading-text">Chargement de la facture...</p>
+      </div>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div class="invoice-page" id="errorState" style="display:none">
+      <div class="error-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Facture introuvable</h3>
+        <p>Impossible de charger cette facture. Vérifiez que l'identifiant est correct ou consultez votre dashboard.</p>
+        <a href="/dashboard.html" class="btn btn-primary" style="margin-top:8px">
+          Retour au dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- INVOICE CONTENT -->
+    <div class="invoice-page" id="invoiceContent" style="display:none">
+
+      <!-- HEADER -->
+      <div class="invoice-header">
+        <div class="header-top">
+          <div class="brand">
+            <div class="brand-icon">
+              <svg viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="30" height="30" rx="4" fill="#1B5E20"/>
+                <path d="M8 22V10h2v12H8zm4-4V10h2v8h-2zm4-6v10h2V12h-2zm4 2v8h2v-8h-2z" fill="#F9A825"/>
+              </svg>
+            </div>
+            <div class="brand-text">
+              <h1>OGOTEL Cloud</h1>
+              <p>Hôtellerie Intelligente</p>
+            </div>
+          </div>
+          <div class="invoice-title-block">
+            <div class="invoice-label">Document</div>
+            <div class="invoice-title">FACTURE</div>
+          </div>
+        </div>
+
+        <div class="header-meta">
+          <div class="meta-item">
+            <span class="label">N° de facture</span>
+            <strong id="invoiceNumber">FAC-2025-0001</strong>
+          </div>
+          <div class="meta-item">
+            <span class="label">Date d'émission</span>
+            <strong id="invoiceDate">—</strong>
+          </div>
+          <div class="meta-item">
+            <span class="label">Statut</span>
+            <span class="status-badge" id="statusBadge">
+              <span class="status-dot"></span>
+              <span id="statusText">—</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTIES -->
+      <div class="parties-section">
+        <div class="party-block">
+          <h3>Émetteur</h3>
+          <div class="name" id="hotelName">—</div>
+          <div class="detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span id="hotelAddress">—</span>
+          </div>
+          <div class="detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span id="hotelPhone">—</span>
+          </div>
+          <div class="detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span id="hotelEmail">—</span>
+          </div>
+        </div>
+
+        <div class="party-block">
+          <h3>Client</h3>
+          <div class="name" id="clientName">—</div>
+          <div class="detail" id="clientPhoneRow" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span id="clientPhone">—</span>
+          </div>
+          <div class="detail" id="clientEmailRow" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span id="clientEmail">—</span>
+          </div>
+          <div class="detail" id="clientIdRow" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span id="clientIdDoc">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-section">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width:45%">Description</th>
+              <th style="width:12%">Qté</th>
+              <th style="width:20%">Prix unitaire</th>
+              <th style="width:23%">Montant</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceItems">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TOTALS -->
+      <div class="totals-section">
+        <div class="totals-box">
+          <div class="totals-row">
+            <span class="label">Sous-total</span>
+            <span class="value" id="subtotal">0 FCFA</span>
+          </div>
+          <div class="totals-row" id="tvaRow" style="display:none">
+            <span class="label">TVA (18%)</span>
+            <span class="value" id="tvaAmount">0 FCFA</span>
+          </div>
+          <div class="totals-row" id="taxeSejourRow" style="display:none">
+            <span class="label">Taxe de séjour</span>
+            <span class="value" id="taxeSejourAmount">0 FCFA</span>
+          </div>
+          <hr class="totals-divider">
+          <div class="totals-row grand">
+            <span class="label">Total TTC</span>
+            <span class="value" id="grandTotal">0 FCFA</span>
+          </div>
+          <div class="totals-row paid-row">
+            <span class="label">Montant payé</span>
+            <span class="value" id="amountPaid">0 FCFA</span>
+          </div>
+          <div class="totals-row remaining-row" id="remainingRow" style="display:none">
+            <span class="label">Reste à payer</span>
+            <span class="value" id="remainingAmount">0 FCFA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENT INFO -->
+      <div class="payment-section">
+        <div class="payment-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        </div>
+        <div class="payment-text">
+          <h4 id="paymentTitle">Paiement par Mobile Money</h4>
+          <p id="paymentSubtitle">Règlement effectué par paiement mobile</p>
+        </div>
+        <div class="payment-methods" id="paymentMethods">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="invoice-footer">
+        <div class="footer-conditions">
+          <strong>Conditions de paiement :</strong>
+          Le paiement est dû à la date du check-out. En cas de retard, des frais de retard de 2% par mois peuvent s'appliquer.
+          Toute réclamation doit être adressée dans les 7 jours suivant la date de la facture.
+        </div>
+        <div class="footer-bottom">
+          <div class="footer-brand">
+            Généré par <strong>OGOTEL Cloud</strong> — © 2025 Tous droits réservés
+          </div>
+          <div class="footer-support">
+            Support : <a href="mailto:support@ogotel.cloud">support@ogotel.cloud</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // CONFIG
+    // ═══════════════════════════════════════════════════════════════
+    const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+
+    // ═══════════════════════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════════════════════
+    function formatMoney(amount) {
+      if (amount == null || isNaN(amount)) return '0 FCFA';
+      return Number(amount).toLocaleString('fr-FR') + ' FCFA';
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '—';
+      return new Date(dateStr).toLocaleDateString('fr-FR', {
+        day: '2-digit', month: 'long', year: 'numeric'
+      });
+    }
+
+    function formatShortDate(dateStr) {
+      if (!dateStr) return '—';
+      return new Date(dateStr).toLocaleDateString('fr-FR', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SUPABASE FETCH WRAPPER
+    // ═══════════════════════════════════════════════════════════════
+    async function supabaseFetch(table, options = {}) {
+      const { filter, select, single, order, limit } = options;
+      let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select || '*'}`;
+      if (filter) url += `&${filter}`;
+      if (order) url += `&order=${order}`;
+      if (limit) url += `&limit=${limit}`;
+
+      const headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': single ? 'return=representation' : 'return=representation'
+      };
+
+      const res = await fetch(url, { headers });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${res.status}`);
+      }
+
+      const data = await res.json();
+      return single ? data[0] : data;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SAMPLE DATA (no ?id= in URL)
+    // ═══════════════════════════════════════════════════════════════
+    function getSampleData() {
+      return {
+        invoice: {
+          id: 'demo-001',
+          invoice_number: 'FAC-2025-0042',
+          created_at: new Date().toISOString(),
+          total_amount: 175000,
+          amount_paid: 100000,
+          status: 'partial',
+          payment_method: 'Mobile Money',
+          hotel_id: 'demo-hotel'
+        },
+        hotel: {
+          name: localStorage.getItem('hotel_name') || 'Hôtel Le Palmier',
+          city: localStorage.getItem('hotel_city') || 'Abidjan, Côte d\'Ivoire',
+          phone: localStorage.getItem('hotel_phone') || '+225 07 08 09 10 11',
+          email: 'contact@hotellepalmier.ci'
+        },
+        client: {
+          name: 'M. Jean-Pierre Konan',
+          phone: '+225 05 12 34 56 78',
+          email: 'jp.konan@email.com'
+        },
+        reservation: {
+          check_in_date: '2025-07-10',
+          check_out_date: '2025-07-15',
+          room_number: '204',
+          room_type: 'Double Confort',
+          price_per_night: 25000,
+          number_of_guests: 2
+        },
+        items: [
+          {
+            description: 'Séjour — Chambre 204 (Double Confort)',
+            sub: '5 nuits × 25 000 FCFA',
+            qty: 5,
+            unitPrice: 25000,
+            total: 125000
+          },
+          {
+            description: 'Room Service — Petit-déjeuner',
+            sub: '5 matins × 5 000 FCFA',
+            qty: 5,
+            unitPrice: 5000,
+            total: 25000
+          },
+          {
+            description: 'Taxe de séjour (touristique)',
+            sub: '5 nuits × 1 000 FCFA / personne × 2',
+            qty: 10,
+            unitPrice: 1000,
+            total: 10000
+          },
+          {
+            description: 'Services supplémentaires',
+            sub: 'Blanchisserie + Transfert aéroport',
+            qty: 1,
+            unitPrice: 15000,
+            total: 15000
+          }
+        ]
+      };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // RENDER INVOICE
+    // ═══════════════════════════════════════════════════════════════
+    function renderInvoice(data) {
+      const { invoice, hotel, client, items, reservation } = data;
+
+      // --- Header ---
+      document.getElementById('invoiceNumber').textContent = invoice.invoice_number || '—';
+      document.getElementById('invoiceDate').textContent = formatDate(invoice.created_at);
+
+      // Status badge
+      const statusBadge = document.getElementById('statusBadge');
+      const statusText = document.getElementById('statusText');
+      const statusMap = {
+        paid: ['Payée', 'status-paid'],
+        partial: ['Partiellement payée', 'status-partial'],
+        pending: ['En attente', 'status-pending'],
+        cancelled: ['Annulée', 'status-partial']
+      };
+      const [label, cls] = statusMap[invoice.status] || ['—', 'status-pending'];
+      statusBadge.className = 'status-badge ' + cls;
+      statusText.textContent = label;
+
+      // --- Parties ---
+      document.getElementById('hotelName').textContent = hotel.name || '—';
+      document.getElementById('hotelAddress').textContent = hotel.city || hotel.address || '—';
+      document.getElementById('hotelPhone').textContent = hotel.phone || '—';
+      document.getElementById('hotelEmail').textContent = hotel.email || '—';
+
+      document.getElementById('clientName').textContent = client.name || '—';
+
+      if (client.phone) {
+        document.getElementById('clientPhoneRow').style.display = 'flex';
+        document.getElementById('clientPhone').textContent = client.phone;
+      }
+      if (client.email) {
+        document.getElementById('clientEmailRow').style.display = 'flex';
+        document.getElementById('clientEmail').textContent = client.email;
+      }
+      if (client.id_type || client.id_number) {
+        document.getElementById('clientIdRow').style.display = 'flex';
+        document.getElementById('clientIdDoc').textContent =
+          (client.id_type || 'Pièce') + (client.id_number ? ' : ' + client.id_number : '');
+      }
+
+      // --- Items table ---
+      const tbody = document.getElementById('invoiceItems');
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td>
+            <div class="item-description">${esc(item.description)}</div>
+            ${item.sub ? `<div class="item-sub">${esc(item.sub)}</div>` : ''}
+          </td>
+          <td>${item.qty}</td>
+          <td>${formatMoney(item.unitPrice)}</td>
+          <td>${formatMoney(item.total)}</td>
+        </tr>
+      `).join('');
+
+      // --- Totals ---
+      const subtotal = items.reduce((s, i) => s + (i.total || 0), 0);
+      const tvaRate = 0.18;
+      const tva = Math.round(subtotal * tvaRate);
+      const hasTVA = invoice.apply_tva || false;
+      const totalTTC = hasTVA ? subtotal + tva : subtotal;
+
+      document.getElementById('subtotal').textContent = formatMoney(subtotal);
+
+      if (hasTVA) {
+        document.getElementById('tvaRow').style.display = 'flex';
+        document.getElementById('tvaAmount').textContent = formatMoney(tva);
+      }
+
+      document.getElementById('grandTotal').textContent = formatMoney(totalTTC);
+      document.getElementById('amountPaid').textContent = formatMoney(invoice.amount_paid || 0);
+
+      const remaining = totalTTC - (invoice.amount_paid || 0);
+      if (remaining > 0) {
+        document.getElementById('remainingRow').style.display = 'flex';
+        document.getElementById('remainingAmount').textContent = formatMoney(remaining);
+      }
+
+      // --- Payment info ---
+      const payMethod = invoice.payment_method || 'Cash';
+      const payTitle = document.getElementById('paymentTitle');
+      const paySubtitle = document.getElementById('paymentSubtitle');
+      const payMethods = document.getElementById('paymentMethods');
+
+      if (payMethod.toLowerCase().includes('mobile') || payMethod.toLowerCase().includes('orange') || payMethod.toLowerCase().includes('mtn') || payMethod.toLowerCase().includes('wave')) {
+        payTitle.textContent = 'Paiement par Mobile Money';
+        paySubtitle.textContent = 'Règlement effectué par paiement mobile';
+        payMethods.innerHTML = `
+          <span class="pay-method-badge orange">🟠 Orange Money</span>
+          <span class="pay-method-badge mtn">🟡 MTN MoMo</span>
+          <span class="pay-method-badge wave">🔵 Wave</span>
+        `;
+      } else if (payMethod.toLowerCase().includes('cash') || payMethod.toLowerCase().includes('espèce')) {
+        payTitle.textContent = 'Paiement en espèces';
+        paySubtitle.textContent = 'Règlement effectué en espèces à la réception';
+        payMethods.innerHTML = `<span class="pay-method-badge cash">💵 Espèces</span>`;
+      } else if (payMethod.toLowerCase().includes('carte') || payMethod.toLowerCase().includes('card') || payMethod.toLowerCase().includes('visa') || payMethod.toLowerCase().includes('master')) {
+        payTitle.textContent = 'Paiement par carte';
+        paySubtitle.textContent = 'Règlement effectué par carte bancaire';
+        payMethods.innerHTML = `
+          <span class="pay-method-badge" style="border-left:3px solid #1A1F71">💳 Visa</span>
+          <span class="pay-method-badge" style="border-left:3px solid #EB001B">💳 Mastercard</span>
+        `;
+      } else if (payMethod.toLowerCase().includes('virement') || payMethod.toLowerCase().includes('transfer') || payMethod.toLowerCase().includes('bank')) {
+        payTitle.textContent = 'Paiement par virement bancaire';
+        paySubtitle.textContent = 'Règlement par virement bancaire';
+        payMethods.innerHTML = `<span class="pay-method-badge" style="border-left:3px solid #1B5E20">🏦 Virement</span>`;
+      } else {
+        payTitle.textContent = 'Paiement';
+        paySubtitle.textContent = 'Facture en attente de règlement';
+        payMethods.innerHTML = `
+          <span class="pay-method-badge orange">🟠 Orange Money</span>
+          <span class="pay-method-badge mtn">🟡 MTN MoMo</span>
+          <span class="pay-method-badge wave">🔵 Wave</span>
+          <span class="pay-method-badge cash">💵 Espèces</span>
+        `;
+      }
+
+      // Update page title
+      document.title = `Facture ${invoice.invoice_number || ''} — ${hotel.name || 'OGOTEL Cloud'}`;
+
+      // Show invoice
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('errorState').style.display = 'none';
+      document.getElementById('invoiceContent').style.display = 'block';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LOAD INVOICE FROM SUPABASE
+    // ═══════════════════════════════════════════════════════════════
+    async function loadInvoiceFromAPI(invoiceId) {
+      try {
+        // Fetch invoice
+        const invoice = await supabaseFetch('invoices', {
+          filter: `id.eq.${invoiceId}`,
+          select: '*, clients(id,name,phone,email,id_type,id_number), rooms(id,number,room_type,price_per_night)',
+          single: true
+        });
+
+        if (!invoice) throw new Error('Facture introuvable');
+
+        // Fetch reservation if linked
+        let reservation = null;
+        if (invoice.reservation_id) {
+          try {
+            reservation = await supabaseFetch('reservations', {
+              filter: `id.eq.${invoice.reservation_id}`,
+              select: 'check_in_date,check_out_date,number_of_guests,notes',
+              single: true
+            });
+          } catch (e) { /* reservation may not exist */ }
+        }
+
+        // Fetch hotel info
+        let hotel = {};
+        try {
+          if (invoice.hotel_id) {
+            hotel = await supabaseFetch('hotels', {
+              filter: `id.eq.${invoice.hotel_id}`,
+              select: 'name,city,address,phone,email',
+              single: true
+            });
+          }
+        } catch (e) { /* fallback to localStorage */ }
+
+        // Fallback to localStorage
+        if (!hotel.name) {
+          hotel.name = localStorage.getItem('hotel_name') || 'Mon Hôtel';
+          hotel.city = localStorage.getItem('hotel_city') || '';
+          hotel.phone = localStorage.getItem('hotel_phone') || '';
+          hotel.email = '';
+        }
+
+        // Build client object
+        const client = invoice.clients || { name: 'Client inconnu' };
+
+        // Build line items
+        const items = [];
+        const nights = reservation
+          ? Math.max(1, Math.ceil((new Date(reservation.check_out_date || invoice.created_at) - new Date(reservation.check_in_date || invoice.created_at)) / 86400000))
+          : 1;
+        const roomRate = invoice.rooms?.price_per_night || 0;
+        const roomNumber = invoice.rooms?.number || '—';
+        const roomType = invoice.rooms?.room_type || '';
+        const stayTotal = nights * roomRate;
+
+        items.push({
+          description: `Séjour — Chambre ${roomNumber}${roomType ? ' (' + roomType + ')' : ''}`,
+          sub: `${nights} nuit${nights > 1 ? 's' : ''} × ${Number(roomRate).toLocaleString('fr-FR')} FCFA`,
+          qty: nights,
+          unitPrice: roomRate,
+          total: stayTotal
+        });
+
+        // Check if there are extras beyond room cost
+        const extras = (invoice.total_amount || 0) - stayTotal;
+        if (extras > 0) {
+          items.push({
+            description: 'Services supplémentaires',
+            sub: 'Room service, blanchisserie, divers',
+            qty: 1,
+            unitPrice: extras,
+            total: extras
+          });
+        }
+
+        return {
+          invoice,
+          hotel,
+          client,
+          reservation,
+          items
+        };
+      } catch (err) {
+        console.error('Error loading invoice:', err);
+        throw err;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MAIN
+    // ═══════════════════════════════════════════════════════════════
+    async function init() {
+      const params = new URLSearchParams(window.location.search);
+      const invoiceId = params.get('id');
+
+      if (invoiceId) {
+        try {
+          const data = await loadInvoiceFromAPI(invoiceId);
+          renderInvoice(data);
+        } catch (err) {
+          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('errorState').style.display = 'block';
+          document.getElementById('invoiceContent').style.display = 'none';
+        }
+      } else {
+        // Demo mode — show sample data
+        const data = getSampleData();
+        renderInvoice(data);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTIONS
+    // ═══════════════════════════════════════════════════════════════
+    function downloadPDF() {
+      window.print();
+    }
+
+    // Start
+    init();
+  </script>
+</body>
+</html>
