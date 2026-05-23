@@ -3,7 +3,7 @@
 ║                OGOTEL CLOUD — PAGE D'INSCRIPTION                    ║
 ║        Inscription avec code d'activation — Côte d'Ivoire            ║
 ║                     © 2025 OGOTEL Cloud                              ║
-║                     v2.0 — fetch() only, zero CDN                    ║
+║                     v3.0 — fetch() only, zero CDN, TRUE COLUMNS     ║
 ╚══════════════════════════════════════════════════════════════════════╝
 -->
 <!DOCTYPE html>
@@ -838,9 +838,9 @@
         </div>
       </div>
 
-      <!-- Status Bar -->
+      <!-- Status Bar — INSIDE right-panel, BEFORE steps-container -->
       <div id="status-bar" style="width:100%;max-width:440px;padding:10px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;background:#E8F5E9;color:#1B5E20;border:1px solid #A5D6A7;">
-        ⚡ Système prêt — entrez votre code d'activation
+        ⚡ Système prêt
       </div>
 
       <div class="steps-container">
@@ -855,18 +855,6 @@
               <p>Code reçu par WhatsApp après votre paiement</p>
             </div>
 
-            <!-- Error box -->
-            <div class="error-box" id="codeErrorBox">
-              <span class="err-icon">❌</span>
-              <div class="err-text" id="codeErrorText">Code invalide ou déjà utilisé.<br>Contactez-nous : +225 0576103277</div>
-            </div>
-
-            <!-- Success confirmation -->
-            <div class="code-success" id="codeSuccess">
-              <div class="code-success-title">✅ Code valide !</div>
-              <div class="code-success-details" id="codeSuccessDetails"></div>
-            </div>
-
             <div class="form-fields">
               <div class="field-group">
                 <div class="field-wrapper">
@@ -875,22 +863,18 @@
                   </span>
                   <input
                     type="text"
-                    class="field-input code-input"
                     id="activation-code"
-                    placeholder="OGOTEL-TEST-001"
+                    class="field-input code-input"
+                    placeholder="OGOTEL-2025-XXXXXX"
                     maxlength="20"
                     autocomplete="off"
                     spellcheck="false"
                   >
                 </div>
-                <div class="field-error" id="codeFieldError"></div>
               </div>
 
-              <button type="button" class="btn btn-primary" id="verify-code-btn" onclick="validateActivationCode()" style="height:56px;">
-                <span class="btn-label">
-                  Vérifier mon code
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                </span>
+              <button type="button" id="verify-code-btn" class="btn btn-primary" onclick="validateActivationCode()" style="height:56px;">
+                <span class="btn-label">Vérifier mon code →</span>
                 <div class="spinner"></div>
               </button>
             </div>
@@ -1092,9 +1076,12 @@
   </div>
 
 
-  <!-- ═══════════════════════════════════════════════
-       JAVASCRIPT — ZERO CDN, fetch() ONLY
-       ═══════════════════════════════════════════════ -->
+  <!-- ═════════════════════════════════════════════════════════════
+       JAVASCRIPT — ZERO CDN, fetch() ONLY, TRUE COLUMNS
+       Columns: id, code, hotel_name, plan, max_rooms, is_used, expires_at, created_at
+       NO plan_id, NO used_by, NO used_at, NO notes, NO created_by
+       NO is_activated, NO plan_name (in activation_codes table)
+  ═════════════════════════════════════════════════════════════ -->
   <script>
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // SUPABASE CONFIG — fetch() only, no CDN client
@@ -1112,14 +1099,6 @@
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // PLAN LIMITS — actual column values
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const planLimits = {
-      'basic': { max_rooms: 20, max_users: 1, price: 15000 },
-      'premium': { max_rooms: 50, max_users: 3, price: 35000 }
-    };
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // XSS PROTECTION
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     function esc(str) {
@@ -1130,10 +1109,9 @@
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STATUS BAR
+    // STATUS BAR — exact user function
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     function updateStatus(message, type) {
-      console.log('📊 Status:', type, message);
       const bar = document.getElementById('status-bar');
       if (!bar) return;
       bar.textContent = message;
@@ -1153,11 +1131,52 @@
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // DYNAMIC ERROR / CONFIRMATION — user's exact functions
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    function afficherErreur(msg) {
+      let div = document.getElementById('code-error');
+      if (!div) {
+        div = document.createElement('div');
+        div.id = 'code-error';
+        div.style.cssText = 'background:#FFEBEE;border:1px solid #EF9A9A;color:#C62828;padding:14px 16px;border-radius:10px;margin-top:12px;font-family:DM Sans,sans-serif;font-size:14px;line-height:1.5;';
+        const btn = document.getElementById('verify-code-btn');
+        if (btn && btn.parentNode) btn.parentNode.insertBefore(div, btn.nextSibling);
+      }
+      div.textContent = msg;
+      div.style.display = 'block';
+    }
+
+    function afficherConfirmationPlan(planLabel, maxRooms) {
+      let div = document.getElementById('plan-ok');
+      if (!div) {
+        div = document.createElement('div');
+        div.id = 'plan-ok';
+        const btn = document.getElementById('verify-code-btn');
+        if (btn && btn.parentNode) btn.parentNode.insertBefore(div, btn.nextSibling);
+      }
+      div.style.cssText = 'background:#E8F5E9;border:2px solid #2E7D32;border-radius:12px;padding:16px 20px;margin-top:16px;font-family:DM Sans,sans-serif;';
+      div.innerHTML = '<div style="display:flex;align-items:center;gap:12px"><span style="font-size:28px">✅</span><div><div style="font-weight:700;color:#1B5E20;font-size:15px">Code valide !</div><div style="color:#2E7D32;font-size:13px;margin-top:2px">' + esc(planLabel) + ' • ' + esc(maxRooms) + ' chambres max</div><div style="color:#546E57;font-size:12px;margin-top:4px">⏳ Passage à l\'étape suivante...</div></div></div>';
+      div.style.display = 'block';
+    }
+
+    function cacherErreur() {
+      const d1 = document.getElementById('code-error');
+      if (d1) d1.style.display = 'none';
+      const d2 = document.getElementById('plan-ok');
+      if (d2) d2.style.display = 'none';
+    }
+
+    function resetBtn(btn) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Vérifier mon code →';
+      }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STATE
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let currentStep = 1;
-    let codeValidationAttempts = 0;
-    const MAX_CODE_ATTEMPTS = 5;
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STEP NAVIGATION
@@ -1201,7 +1220,7 @@
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // PASSWORD TOGGLES
+    // PASSWORD TOGGLE
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     function setupToggle(toggleId, inputId, eyeId, eyeOffId) {
       const toggle = document.getElementById(toggleId);
@@ -1246,7 +1265,7 @@
     }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // HELPERS
+    // HELPERS — error boxes for steps 2 & 3
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     function showErr(boxId, textId, msg) {
       document.getElementById(textId).innerHTML = msg;
@@ -1266,131 +1285,130 @@
     function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 1 — Validate Activation Code
-    // Uses ACTUAL column names: plan, is_activated
+    // getEndDate — +1 year
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    function getEndDate() {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      return d.toISOString().split('T')[0];
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 1 — VALIDATE ACTIVATION CODE
+    // TRUE COLUMNS: plan, is_used, max_rooms, hotel_name, expires_at
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     async function validateActivationCode() {
-      console.log('🔑 validateActivationCode() called');
-      const codeInput = document.getElementById('activation-code');
-      const code = codeInput.value.trim().toUpperCase();
-      const codeFieldError = document.getElementById('codeFieldError');
-      const btn = document.getElementById('verify-code-btn');
+      const input = document.getElementById('activation-code');
+      if (!input) {
+        console.error('❌ Input activation-code introuvable');
+        return;
+      }
 
-      hideErr('codeErrorBox');
-      clearFieldErr(codeInput, codeFieldError);
-
-      console.log('📝 Code entered:', code);
+      const code = input.value.trim().toUpperCase();
+      console.log('Code à valider:', code);
 
       if (!code) {
-        console.log('❌ No code entered');
-        showFieldErr(codeInput, codeFieldError, 'Veuillez entrer votre code d\'activation.');
-        return;
-      }
-      if (code.length < 5) {
-        console.log('❌ Code too short:', code.length, 'chars');
-        showFieldErr(codeInput, codeFieldError, 'Le code est trop court.');
+        afficherErreur('Veuillez entrer votre code d\'activation.');
         return;
       }
 
-      // Rate limiting
-      codeValidationAttempts++;
-      console.log('🔢 Attempt', codeValidationAttempts, 'of', MAX_CODE_ATTEMPTS);
-      if (codeValidationAttempts > MAX_CODE_ATTEMPTS) {
+      // Loading
+      const btn = document.getElementById('verify-code-btn');
+      if (btn) {
         btn.disabled = true;
-        btn.querySelector('.btn-label').textContent = 'Trop de tentatives.';
-        showErr('codeErrorBox', 'codeErrorText',
-          'Trop de tentatives de validation.<br>Attendez quelques minutes ou contactez-nous : <strong>+225 0576103277</strong>');
-        updateStatus('❌ Trop de tentatives — attendez quelques minutes', 'error');
-        return;
+        btn.innerHTML = '⏳ Vérification...';
       }
+      updateStatus('🔄 Vérification du code en cours...', 'loading');
 
-      btn.disabled = true;
-      btn.classList.add('loading');
-      updateStatus('🔄 Vérification en cours...', 'loading');
+      cacherErreur();
 
       try {
-        console.log('📡 Fetching activation code from Supabase...');
-        const url = SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(code) + '&select=*';
+        console.log('🔍 Requête Supabase...');
+
+        // ✅ REQUÊTE CORRECTE — vraies colonnes, pas de jointure
+        const url = SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(code) + '&select=id,code,hotel_name,plan,max_rooms,is_used,expires_at&limit=1';
         console.log('📡 URL:', url);
 
-        const res = await fetch(url, { headers: sbHeaders() });
-        console.log('📡 Response status:', res.status);
+        const resp = await fetch(url, { headers: sbHeaders() });
+        const data = await resp.json();
 
-        if (!res.ok) {
-          console.error('❌ Fetch failed with status:', res.status);
-          throw new Error('Erreur HTTP ' + res.status);
+        console.log('📦 Réponse:', resp.status, JSON.stringify(data, null, 2));
+
+        // Erreur HTTP
+        if (!resp.ok) {
+          console.error('❌ Erreur HTTP:', resp.status, data);
+          afficherErreur('Erreur de connexion (' + resp.status + '). Vérifiez internet.');
+          resetBtn(btn);
+          updateStatus('❌ Erreur de connexion', 'error');
+          return;
         }
 
-        const data = await res.json();
-        console.log('📦 Raw response data:', JSON.stringify(data));
-
+        // Code non trouvé
         if (!data || data.length === 0) {
-          console.log('❌ Code not found in database');
-          showErr('codeErrorBox', 'codeErrorText',
-            'Code invalide ou introuvable.<br>Contactez-nous : <strong>+225 0576103277</strong>');
-          updateStatus('❌ Code ' + esc(code) + ' introuvable', 'error');
+          afficherErreur('❌ Code "' + code + '" invalide ou introuvable. Vérifiez WhatsApp. Aide : +225 0576103277');
+          resetBtn(btn);
+          updateStatus('❌ Code non trouvé', 'error');
           return;
         }
 
         const codeData = data[0];
-        console.log('✅ Code found:', JSON.stringify(codeData));
-        console.log('📋 plan:', codeData.plan, '| is_activated:', codeData.is_activated, '| max_rooms:', codeData.max_rooms);
+        console.log('✅ Code trouvé:', codeData);
 
-        // Check is_activated (actual column name, NOT is_used)
-        if (codeData.is_activated === true) {
-          console.log('❌ Code already activated');
-          showErr('codeErrorBox', 'codeErrorText',
-            'Ce code a déjà été utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
-          updateStatus('❌ Code déjà activé', 'error');
+        // Code déjà utilisé — vérifie is_used (vraie colonne)
+        if (codeData.is_used === true) {
+          afficherErreur('❌ Code déjà utilisé. Contactez-nous : +225 0576103277');
+          resetBtn(btn);
+          updateStatus('❌ Code déjà utilisé', 'error');
           return;
         }
 
-        // Validate plan value (actual values: basic, premium)
-        const plan = codeData.plan;
-        if (plan !== 'basic' && plan !== 'premium') {
-          console.warn('⚠️ Unknown plan value:', plan, '— defaulting to basic');
+        // Code expiré
+        if (codeData.expires_at) {
+          const expiration = new Date(codeData.expires_at);
+          if (expiration < new Date()) {
+            afficherErreur('❌ Code expiré le ' + expiration.toLocaleDateString('fr-FR') + '. Contactez : +225 0576103277');
+            resetBtn(btn);
+            updateStatus('❌ Code expiré', 'error');
+            return;
+          }
         }
 
-        const limits = planLimits[plan] || planLimits['basic'];
-        const maxRooms = codeData.max_rooms || limits.max_rooms;
-        const maxUsers = limits.max_users;
+        // ✅ CODE VALIDE !
+        console.log('✅✅✅ Code valide ! plan:', codeData.plan, '| max_rooms:', codeData.max_rooms);
+        updateStatus('✅ Code valide ! Plan ' + (codeData.plan || 'basic') + ' activé', 'ok');
 
-        console.log('📋 Plan info → plan:', plan, '| max_rooms:', maxRooms, '| max_users:', maxUsers);
+        // Sauvegarder — avec les VRAIS noms de colonnes
+        sessionStorage.setItem('activation_code', codeData.code);
+        sessionStorage.setItem('code_id', codeData.id);
+        sessionStorage.setItem('plan', codeData.plan || 'basic');
+        sessionStorage.setItem('plan_name', codeData.plan || 'basic');
+        sessionStorage.setItem('max_rooms', String(codeData.max_rooms || 10));
+        sessionStorage.setItem('hotel_name_prefill', codeData.hotel_name || '');
 
-        // Store in sessionStorage using ACTUAL column name 'plan' (NOT plan_name)
-        sessionStorage.setItem('code', code);
-        sessionStorage.setItem('plan', plan);
-        sessionStorage.setItem('max_rooms', String(maxRooms));
-        console.log('💾 Stored in sessionStorage: code=' + code + ', plan=' + plan + ', max_rooms=' + maxRooms);
+        // Affichage plan
+        const planDisplay = {
+          'basic': 'STARTER — 15 000 FCFA/mois',
+          'premium': 'BUSINESS — 35 000 FCFA/mois',
+          'enterprise': 'ENTERPRISE — 65 000 FCFA/mois'
+        };
+        const planLabel = planDisplay[codeData.plan] || (codeData.plan || 'Standard');
+        afficherConfirmationPlan(planLabel, codeData.max_rooms);
 
-        // Show success card
-        document.getElementById('codeSuccessDetails').innerHTML =
-          '<div class="code-success-item"><span>📦</span> Plan <strong>' + esc(plan) + '</strong> activé</div>' +
-          '<div class="code-success-item"><span>🛏️</span> Jusqu\'à <strong>' + esc(maxRooms) + ' chambres</strong></div>' +
-          '<div class="code-success-item"><span>👤</span> <strong>' + esc(maxUsers) + ' utilisateur(s)</strong></div>';
-        document.getElementById('codeSuccess').classList.add('visible');
-
-        updateStatus('✅ Code ' + esc(code) + ' validé ! Plan ' + esc(plan) + ' activé.', 'ready');
-
-        // Auto-advance to step 2
-        console.log('⏭️ Advancing to step 2 in 1.2s...');
-        setTimeout(() => goToStep(2), 1200);
+        // Passer étape 2
+        setTimeout(() => goToStep(2), 2000);
 
       } catch (err) {
-        console.error('❌ validateActivationCode error:', err);
-        showErr('codeErrorBox', 'codeErrorText',
-          'Une erreur est survenue.<br>Vérifiez votre connexion et réessayez.');
-        updateStatus('❌ Erreur: ' + esc(err.message), 'error');
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove('loading');
+        console.error('❌ Erreur:', err);
+        afficherErreur('Erreur technique : ' + err.message);
+        resetBtn(btn);
+        updateStatus('❌ Erreur: ' + err.message, 'error');
       }
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 2 — Validate Hotel Info
-    // Reads sessionStorage for plan limits
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 2 — VALIDATE HOTEL INFO
+    // Uses sessionStorage.getItem('plan') and sessionStorage.getItem('max_rooms')
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     function validateStep2() {
       console.log('🏨 validateStep2() called');
       const name = document.getElementById('hotelName').value.trim();
@@ -1408,10 +1426,10 @@
       if (email && !isValidEmail(email)) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez entrer un email valide.'); return false; }
 
       // Read max_rooms from sessionStorage (key: 'max_rooms')
-      let maxRooms = 20;
+      let maxRooms = 10;
       try {
-        maxRooms = parseInt(sessionStorage.getItem('max_rooms'), 10) || 20;
-      } catch(e) { /* fallback to 20 */ }
+        maxRooms = parseInt(sessionStorage.getItem('max_rooms'), 10) || 10;
+      } catch(e) { /* fallback to 10 */ }
       console.log('📋 Max rooms from sessionStorage:', maxRooms);
 
       if (!rooms || rooms < 1) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nombre de chambres est requis.'); return false; }
@@ -1433,9 +1451,9 @@
       return true;
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 3 — Validate Admin Info
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 3 — VALIDATE ADMIN INFO
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     function validateStep3() {
       console.log('👤 validateStep3() called');
       hideErr('adminErrorBox');
@@ -1482,19 +1500,10 @@
       };
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // HELPER: getEndDate (+1 year)
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    function getEndDate() {
-      const d = new Date();
-      d.setFullYear(d.getFullYear() + 1);
-      return d.toISOString().split('T')[0];
-    }
-
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // REGISTRATION — Full flow
-    // Uses ACTUAL columns: plan, is_activated
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // REGISTER USER — Full flow with TRUE COLUMNS
+    // activation_codes: plan, is_used (NOT plan_name, NOT is_activated)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     async function registerUser() {
       console.log('🚀 registerUser() called');
       const formData = validateStep3();
@@ -1507,8 +1516,8 @@
       updateStatus('🔄 Création du compte en cours...', 'loading');
 
       try {
-        // Re-validate activation code via fetch
-        const storedCode = sessionStorage.getItem('code');
+        // 1. Re-validate code — check is_used (NOT is_activated)
+        const storedCode = sessionStorage.getItem('activation_code');
         console.log('📋 Stored code for re-validation:', storedCode);
 
         if (!storedCode) {
@@ -1518,55 +1527,38 @@
           return;
         }
 
-        console.log('📡 Re-validating code via fetch...');
-        const codeRes = await fetch(
-          SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode) + '&select=*',
-          { headers: sbHeaders() }
-        );
-        const codeDataArr = await codeRes.json();
-        console.log('📦 Code re-validation response:', JSON.stringify(codeDataArr));
+        console.log('📡 Re-validating code...');
+        const codeResp = await fetch(SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode) + '&select=id,code,plan,is_used,max_rooms', {
+          headers: sbHeaders()
+        });
+        const codeRows = await codeResp.json();
+        console.log('📦 Code re-validation response:', JSON.stringify(codeRows));
 
-        if (!codeDataArr || codeDataArr.length === 0) {
-          showErr('adminErrorBox', 'adminErrorText',
-            'Code d\'activation invalide. Veuillez recommencer.');
-          updateStatus('❌ Code invalide lors de la vérification', 'error');
+        if (!codeRows || codeRows.length === 0 || codeRows[0].is_used) {
+          showErr('adminErrorBox', 'adminErrorText', 'Code invalide ou déjà utilisé.');
+          updateStatus('❌ Code invalide ou déjà utilisé', 'error');
           return;
         }
+        const codeInfo = codeRows[0];
+        console.log('✅ Code re-validated → plan:', codeInfo.plan, '| is_used:', codeInfo.is_used);
 
-        const codeData = codeDataArr[0];
-
-        // Check is_activated (actual column name, NOT is_used)
-        if (codeData.is_activated === true) {
-          showErr('adminErrorBox', 'adminErrorText',
-            'Ce code a déjà été utilisé.');
-          updateStatus('❌ Code déjà activé', 'error');
-          return;
-        }
-
-        const plan = codeData.plan;
-        console.log('📋 Code re-validated → plan:', plan, '| is_activated:', codeData.is_activated);
-
-        // 1. Auth signup via fetch
+        // 2. Auth signup
         console.log('📧 Creating auth user:', formData.email);
         updateStatus('🔄 Création du compte utilisateur...', 'loading');
 
-        const authRes = await fetch(SB_URL + '/auth/v1/signup', {
+        const authResp = await fetch(SB_URL + '/auth/v1/signup', {
           method: 'POST',
-          headers: sbHeaders(),
+          headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: formData.email,
             password: formData.password,
-            data: {
-              full_name: formData.fullName,
-              role: 'hotel_admin'
-            }
+            data: { full_name: formData.fullName, role: 'hotel_admin' }
           })
         });
+        const authData = await authResp.json();
+        console.log('📧 Auth response status:', authResp.status);
 
-        const authData = await authRes.json();
-        console.log('📧 Auth response status:', authRes.status);
-
-        if (!authRes.ok) {
+        if (!authResp.ok) {
           const authMsg = authData?.msg || authData?.error_description || authData?.message || JSON.stringify(authData);
           console.error('❌ Auth error:', authMsg);
           if (authMsg.includes('already registered') || authMsg.includes('already been registered')) {
@@ -1574,7 +1566,7 @@
           } else {
             showErr('adminErrorBox', 'adminErrorText', 'Erreur : ' + esc(authMsg));
           }
-          updateStatus('❌ Erreur création compte: ' + esc(authMsg), 'error');
+          updateStatus('❌ Erreur création compte', 'error');
           return;
         }
 
@@ -1587,17 +1579,15 @@
 
         console.log('✅ Auth user created:', authData.user.id);
 
-        // 2. Create hotel — use codeData.plan (NOT plan_name)
+        // 3. Create hotel — use codeInfo.plan (NOT plan_name)
         console.log('🏨 Creating hotel entry...');
         updateStatus('🔄 Création de l\'hôtel...', 'loading');
 
         const hotelPayload = {
           name: sessionStorage.getItem('hotel_name'),
           city: sessionStorage.getItem('hotel_city'),
-          address: sessionStorage.getItem('hotel_address') || null,
           phone: sessionStorage.getItem('hotel_phone'),
-          email: sessionStorage.getItem('hotel_email') || null,
-          plan: plan, // ACTUAL column name: plan (NOT plan_name)
+          plan_name: codeInfo.plan || 'basic',  // hotel table may use plan_name
           activation_code: storedCode,
           subscription_start: new Date().toISOString().split('T')[0],
           subscription_end: getEndDate()
@@ -1606,24 +1596,24 @@
 
         let hotelData = null;
         try {
-          const hotelRes = await fetch(SB_URL + '/rest/v1/hotels', {
+          const hotelResp = await fetch(SB_URL + '/rest/v1/hotels', {
             method: 'POST',
             headers: sbHeaders(),
             body: JSON.stringify(hotelPayload)
           });
-          if (hotelRes.ok) {
-            const hotelResult = await hotelRes.json();
+          if (hotelResp.ok) {
+            const hotelResult = await hotelResp.json();
             hotelData = hotelResult && hotelResult[0] ? hotelResult[0] : null;
             console.log('✅ Hotel created:', hotelData ? hotelData.id : 'OK');
           } else {
-            const hotelErr = await hotelRes.json().catch(() => ({}));
+            const hotelErr = await hotelResp.json().catch(() => ({}));
             console.warn('⚠️ Hotel creation warning:', JSON.stringify(hotelErr));
           }
         } catch (hotelErr) {
           console.warn('⚠️ Hotel creation exception:', hotelErr);
         }
 
-        // 3. Create profile if possible
+        // 4. Create profile
         console.log('👤 Creating user profile...');
         try {
           await fetch(SB_URL + '/rest/v1/user_profiles', {
@@ -1642,30 +1632,28 @@
           console.warn('⚠️ Profile creation warning:', profileErr);
         }
 
-        // 4. Mark code as used — PATCH is_activated = true (NOT is_used)
-        // Wrap in try/catch since used_at may not exist
-        console.log('🔐 Marking code as activated...');
+        // 5. Mark code as used — PATCH is_used = true (CORRECT column name)
+        console.log('🔐 Marking code as used (is_used = true)...');
         try {
-          const patchPayload = { is_activated: true };
-          const patchRes = await fetch(SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode), {
+          const patchResp = await fetch(SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode), {
             method: 'PATCH',
             headers: sbHeaders(),
-            body: JSON.stringify(patchPayload)
+            body: JSON.stringify({ is_used: true })
           });
-          console.log('🔐 Code activation PATCH status:', patchRes.status);
-          if (patchRes.ok) {
-            console.log('✅ Code marked as activated (is_activated = true)');
+          console.log('🔐 Code PATCH status:', patchResp.status);
+          if (patchResp.ok) {
+            console.log('✅ Code marked as used (is_used = true)');
           } else {
-            const patchErr = await patchRes.json().catch(() => ({}));
-            console.warn('⚠️ Code activation PATCH warning:', JSON.stringify(patchErr));
+            const patchErr = await patchResp.json().catch(() => ({}));
+            console.warn('⚠️ Code PATCH warning:', JSON.stringify(patchErr));
           }
         } catch (e) {
           console.warn('⚠️ Code update warning:', e);
         }
 
-        // 5. Show success
+        // 6. Success!
         console.log('🎉 Registration complete! Showing success overlay...');
-        updateStatus('✅ Compte créé avec succès !', 'ready');
+        updateStatus('✅ Compte créé avec succès !', 'ok');
         showSuccessOverlay();
 
       } catch (err) {
@@ -1697,16 +1685,14 @@
       }, 3500);
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // DOMContentLoaded — INIT
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // DOMContentLoaded — EXACT USER LOGIC
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     document.addEventListener('DOMContentLoaded', () => {
-      console.log('📄 DOM chargé ! OGOTEL Cloud Register v2.0');
+      console.log('📄 OGOTEL Cloud Register — DOM chargé');
+      updateStatus('⚡ Système prêt — entrez votre code d\'activation', 'ok');
 
-      // Status indicator
-      updateStatus('⚡ Système prêt — entrez votre code d\'activation', 'ready');
-
-      // Bind verify button (double binding: onclick + addEventListener)
+      // Bind verify button (double binding)
       const btn = document.getElementById('verify-code-btn');
       if (btn) {
         btn.addEventListener('click', validateActivationCode);
@@ -1714,76 +1700,72 @@
       } else {
         console.error('❌ Bouton verify-code-btn introuvable !');
         document.querySelectorAll('button').forEach(b => {
-          if (b.textContent.includes('Vérifier')) {
+          const txt = b.textContent.toLowerCase();
+          if (txt.includes('vérifier') || txt.includes('verifier') || txt.includes('code')) {
             b.addEventListener('click', validateActivationCode);
+            b.id = 'verify-code-btn';
             console.log('✅ Bouton trouvé par fallback:', b.textContent.trim());
           }
         });
       }
 
-      // Enter key on input
-      const codeInput = document.getElementById('activation-code');
-      if (codeInput) {
-        codeInput.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
-            console.log('⌨️ Enter key pressed on code input');
-            validateActivationCode();
-          }
-        });
-        codeInput.addEventListener('input', (e) => {
+      // Bind input
+      const input = document.getElementById('activation-code');
+      if (input) {
+        input.addEventListener('input', (e) => {
           const pos = e.target.selectionStart;
           e.target.value = e.target.value.toUpperCase();
           e.target.setSelectionRange(pos, pos);
         });
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') validateActivationCode();
+        });
         console.log('✅ Input activation-code lié');
       } else {
         console.error('❌ Input activation-code introuvable !');
-        updateStatus('❌ ERREUR: Champ activation-code introuvable !', 'error');
+        document.querySelectorAll('input').forEach((inp, i) => {
+          console.log('Input ' + i + ':', inp.id, inp.type, inp.placeholder);
+        });
       }
 
-      // Step 2 buttons
+      // Step 2/3 buttons
       document.getElementById('btn-back-step1')?.addEventListener('click', () => goToStep(1));
       document.getElementById('btn-next-step2')?.addEventListener('click', () => {
         if (validateStep2()) goToStep(3);
       });
-
-      // Step 3 buttons
       document.getElementById('btn-back-step2')?.addEventListener('click', () => goToStep(2));
       document.getElementById('btn-register')?.addEventListener('click', registerUser);
 
-      // Password toggles
+      // Password toggles, strength, etc.
       setupToggle('pwToggle1', 'adminPassword', 'eye1', 'eyeOff1');
       setupToggle('pwToggle2', 'adminPasswordConfirm', 'eye2', 'eyeOff2');
-
-      // Password strength
       document.getElementById('adminPassword')?.addEventListener('input', function() {
         updateStrengthUI(checkPasswordStrength(this.value));
       });
-
-      // Confirm password match — real-time
       document.getElementById('adminPasswordConfirm')?.addEventListener('input', function() {
         const pw = document.getElementById('adminPassword').value;
         const errEl = document.getElementById('adminPasswordConfirmError');
-        const inputEl = this;
         if (this.value && this.value !== pw) {
-          showFieldErr(inputEl, errEl, 'Les mots de passe ne correspondent pas.');
+          showFieldErr(this, errEl, 'Les mots de passe ne correspondent pas.');
         } else {
-          clearFieldErr(inputEl, errEl);
+          clearFieldErr(this, errEl);
         }
       });
 
-      // MutationObserver for plan info — reads sessionStorage.getItem('plan')
+      // MutationObserver for plan info on step 2
       const observer = new MutationObserver(() => {
-        if (document.getElementById('step2')?.classList.contains('active')) {
+        const step2 = document.getElementById('step2');
+        if (step2 && step2.classList.contains('active')) {
           const plan = sessionStorage.getItem('plan') || 'basic';
-          const maxRooms = sessionStorage.getItem('max_rooms') || '20';
-          const el = document.getElementById('planInfo');
-          if (el) el.innerHTML = '📦 Plan <strong>' + esc(plan) + '</strong> — Maximum <strong>' + esc(maxRooms) + ' chambres</strong>';
+          const maxRooms = sessionStorage.getItem('max_rooms') || '10';
+          const planEl = document.getElementById('planInfo');
+          if (planEl) {
+            planEl.innerHTML = '📦 Plan <strong>' + esc(plan) + '</strong> — <strong>' + esc(maxRooms) + '</strong> chambres max';
+          }
           const hint = document.getElementById('roomsHint');
           if (hint) hint.textContent = 'Maximum par votre plan : ' + maxRooms + ' chambres';
           const roomsInput = document.getElementById('hotelRooms');
           if (roomsInput) roomsInput.max = maxRooms;
-          console.log('📋 Plan info displayed → plan:', plan, '| max_rooms:', maxRooms);
         }
       });
       observer.observe(document.getElementById('step2'), { attributes: true, attributeFilter: ['class'] });
