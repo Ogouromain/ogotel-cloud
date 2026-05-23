@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/register.html", "destination": "/register" },
+    { "source": "/login.html", "destination": "/login" },
+    { "source": "/dashboard.html", "destination": "/dashboard" },
+    { "source": "/landing.html", "destination": "/landing" },
+    { "source": "/admin/super-admin.html", "destination": "/admin/super-admin" },
+    { "source": "/register", "destination": "/api/serve-html?file=register" },
+    { "source": "/login", "destination": "/api/serve-html?file=login" },
+    { "source": "/dashboard", "destination": "/api/serve-html?file=dashboard" },
+    { "source": "/landing", "destination": "/api/serve-html?file=landing" },
+    { "source": "/admin/super-admin", "destination": "/api/serve-html?file=admin/super-admin" }
+  ]
+}

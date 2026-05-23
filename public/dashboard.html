@@ -3919,7 +3919,7 @@
 
         // Check session
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) { window.location.href = '../auth/login.html'; return; }
+        if (!session) { window.location.href = '/login'; return; }
         currentUser = session.user;
 
         // Fetch profile + hotel
@@ -3929,7 +3929,7 @@
           .eq('id', currentUser.id)
           .single();
 
-        if (!profile) { window.location.href = '../auth/register.html'; return; }
+        if (!profile) { window.location.href = '/register'; return; }
         currentProfile = profile;
         currentHotel = profile.hotels;
         hotelId = profile.hotel_id || currentHotel?.id;
@@ -3944,7 +3944,7 @@
                 <div style="font-size:3rem;margin-bottom:20px;">🔒</div>
                 <h2 style="font-family:var(--font-heading);font-size:1.5rem;color:var(--text-primary);margin-bottom:10px;">Hôtel suspendu</h2>
                 <p style="color:var(--text-secondary);margin-bottom:24px;">Votre espace a été suspendu par l'administration. Veuillez nous contacter pour plus d'informations.</p>
-                <a href="../auth/login.html" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--green-primary);color:#fff;border-radius:12px;font-weight:700;text-decoration:none;">Se déconnecter</a>
+                <a href="/login" style="display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--green-primary);color:#fff;border-radius:12px;font-weight:700;text-decoration:none;">Se déconnecter</a>
                 <p style="margin-top:16px;font-size:0.85rem;color:var(--text-secondary);">WhatsApp : +225 0576103277</p>
               </div>
             </div>
@@ -3955,7 +3955,7 @@
 
         // Redirect super_admin
         if (profile.role === 'super_admin') {
-          window.location.href = '../admin/super-admin.html';
+          window.location.href = '/admin/super-admin';
           return;
         }
 
@@ -3972,7 +3972,7 @@
       } catch (err) {
         console.error('Init error:', err);
         document.getElementById('loadingScreen').innerHTML =
-          '<div style="text-align:center;color:#fff"><h2 style="margin-bottom:12px">Erreur de connexion</h2><p style="opacity:.7">Vérifiez votre connexion et réessayez.</p><a href="../auth/login.html" style="color:var(--gold);margin-top:16px;display:inline-block">← Retour à la connexion</a></div>';
+          '<div style="text-align:center;color:#fff"><h2 style="margin-bottom:12px">Erreur de connexion</h2><p style="opacity:.7">Vérifiez votre connexion et réessayez.</p><a href="/login" style="color:var(--gold);margin-top:16px;display:inline-block">← Retour à la connexion</a></div>';
       }
 
       initEventListeners();
@@ -4007,7 +4007,7 @@
       // Logout
       document.getElementById('btnLogout').addEventListener('click', async () => {
         await supabase.auth.signOut();
-        window.location.href = '../auth/login.html';
+        window.location.href = '/login';
       });
 
       // Room filters
