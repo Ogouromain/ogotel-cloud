@@ -220,3 +220,45 @@ Stage Summary:
 - register.html now works without any CDN dependency
 - All functionality preserved: code validation, hotel info, account creation, step navigation
 - File written to /home/z/my-project/public/auth/register.html
+
+---
+Task ID: 11
+Agent: Main Agent
+Task: Remove Supabase CDN from all pages + delete corrupted src/ogotel-cloud/
+
+Work Log:
+- Replaced @supabase/supabase-js CDN with native fetch() REST calls in login.html, dashboard.html, super-admin.html
+- login.html: signInWithPassword → /auth/v1/token, resetPassword → /auth/v1/recover
+- dashboard.html: _SBQuery wrapper class for drop-in supabase SDK replacement
+- super-admin.html: All supabase.from() calls → fetch GET/POST/PATCH/DELETE
+- Deleted src/ogotel-cloud/ folder (corrupted by security agent, wrong columns/RPC)
+- Removed 12,898 lines of corrupted code
+
+Stage Summary:
+- Zero CDN dependency for Supabase across all pages
+- All pages use native fetch() — works in Côte d'Ivoire
+- Clean file structure: only public/ directory for HTML pages
+
+---
+Task ID: 12
+Agent: Main Agent
+Task: Build 6 new modules + cleanup duplicates + fix all page links
+
+Work Log:
+- Created 7 new HTML pages: email-confirmed, reset-password, payment, invoice, onboarding, 404, maintenance
+- Cleaned up duplicate files (public/app/, public/auth/, public/landing.html)
+- Fixed all broken cross-page links (/auth/* → root paths)
+- Updated next.config.ts with rewrites for all 12 pages
+- Verified no CDN references remain for Supabase
+
+Stage Summary:
+- Complete page structure (12 pages):
+  landing/ → login → register → onboarding → dashboard → payment → invoice
+  → reset-password → email-confirmed → super-admin → 404 → maintenance
+- email-confirmed.html: Split-screen success page with auto-redirect countdown
+- reset-password.html: Hash token parsing, password strength meter, Supabase /auth/v1/user
+- payment.html: Mobile Money (Orange Money, MTN MoMo, Wave) 4-step payment flow
+- invoice.html: A4 print layout, invoice table, payment badges, @media print CSS
+- onboarding.html: 5-step wizard (welcome → rooms → team → test reservation → done)
+- 404.html: Gradient 404 text, floating animation, auto-redirect
+- maintenance.html: Dark theme, progress bar, auto-refresh every 30s
