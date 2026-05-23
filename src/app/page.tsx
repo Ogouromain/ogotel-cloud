@@ -1,11 +1,6 @@
 'use client'
-
 import { useEffect } from 'react'
-
 export default function Home() {
-  useEffect(() => {
-    window.location.replace('/landing')
-  }, [])
-
+  useEffect(() => { window.location.href = '/landing.html' }, [])
   return null
 }
