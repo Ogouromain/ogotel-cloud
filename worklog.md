@@ -202,3 +202,21 @@ Stage Summary:
 - Suspended hotels are blocked with a clear lock screen message
 - All dynamic database values are properly escaped before rendering
 - Autocomplete dropdown uses safe event delegation instead of inline onclick string concatenation
+
+---
+Task ID: 1
+Agent: main
+Task: Rewrite register.html to use fetch() instead of Supabase CDN SDK
+
+Work Log:
+- Analyzed the register.html code and identified CDN dependency as root cause of button not working
+- Rewrote JavaScript to use Supabase REST API via fetch() calls
+- Removed Supabase CDN script tags and Lucide CDN
+- Kept all HTML/CSS identical
+- Added RPC-first approach with direct query fallback for code validation
+- Used fetch-based auth signup for user registration
+
+Stage Summary:
+- register.html now works without any CDN dependency
+- All functionality preserved: code validation, hotel info, account creation, step navigation
+- File written to /home/z/my-project/public/auth/register.html
