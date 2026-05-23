@@ -18,8 +18,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Supabase v2 CDN -->
+  <!-- Supabase v2 CDN — with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // If CDN fails, try unpkg fallback
+    if (!window.supabase || !window.supabase.createClient) {
+      console.warn('[DEBUG] jsdelivr CDN failed, loading from unpkg...');
+      document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+    }
+  </script>
 
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -843,6 +850,7 @@
         </div>
       </div>
 
+      <div id="debugBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#FEF3C7; color:#92400E; padding:8px 16px; font-size:13px; text-align:center; font-family:sans-serif; border-bottom:2px solid #F59E0B;"></div>
       <div class="steps-container">
 
         <!-- ═══════════════════════════════════
@@ -1099,28 +1107,37 @@
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // ⚠️  SUPABASE CONFIGURATION — SÉCURITÉ
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    //
-    // SEULEMENT la clé ANON est utilisée côté navigateur.
-    // La SERVICE ROLE KEY ne doit JAMAIS être exposée ici.
-    // Elle contourne RLS et donne un accès complet à la DB.
-    // À utiliser uniquement côté serveur.
-    //
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
 
-    // NEVER: const SERVICE_ROLE_KEY = '...'; ← backend only!
-
     let supabase = null;
+    let supabaseReady = false;
 
     function initSupabase() {
       try {
+        console.log('[DEBUG] initSupabase called. window.supabase =', !!window.supabase);
         if (window.supabase && window.supabase.createClient) {
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          console.log('✅ Supabase client initialized (ANON key).');
+          supabaseReady = true;
+          console.log('[DEBUG] ✅ Supabase client initialized.');
+        } else {
+          console.warn('[DEBUG] ⚠️ window.supabase or createClient not found.');
+          // Show visible warning
+          const banner = document.getElementById('debugBanner');
+          if (banner) {
+            banner.textContent = '⚠️ Chargement de Supabase en cours...';
+            banner.style.display = 'block';
+          }
         }
-      } catch (e) { console.error('❌ Supabase init error:', e); }
+      } catch (e) {
+        console.error('[DEBUG] ❌ Supabase init error:', e);
+        const banner = document.getElementById('debugBanner');
+        if (banner) {
+          banner.textContent = '❌ Erreur initialisation Supabase: ' + e.message;
+          banner.style.display = 'block';
+        }
+      }
     }
 
 
@@ -1269,6 +1286,7 @@
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     async function validateCode() {
+      console.log('[DEBUG] validateCode() called');
       const codeInput = document.getElementById('activationCode');
       const code = codeInput.value.trim().toUpperCase();
       const codeFieldError = document.getElementById('codeFieldError');
@@ -1298,20 +1316,85 @@
 
       btn.disabled = true;
       btn.classList.add('loading');
+      console.log('[DEBUG] Button loading state set. Calling Supabase RPC...');
 
       try {
-        if (!supabase) throw new Error('Supabase non initialisé.');
+        if (!supabase) {
+          console.error('[DEBUG] supabase is null! Attempting re-init...');
+          initSupabase();
+          if (!supabase) throw new Error('Supabase non initialisé. Rechargez la page.');
+        }
 
-        // SECURITY: Use RPC instead of direct table access
-        const { data: codeData, error: codeErr } = await supabase.rpc('validate_activation_code', { p_code: code });
+        // Try RPC first
+        console.log('[DEBUG] Calling validate_activation_code RPC with code:', code);
+        let codeData, codeErr;
 
+        try {
+          const rpcResult = await supabase.rpc('validate_activation_code', { p_code: code });
+          codeData = rpcResult.data;
+          codeErr = rpcResult.error;
+          console.log('[DEBUG] RPC result:', { codeData, codeErr });
+        } catch (rpcErr) {
+          console.warn('[DEBUG] RPC failed, trying direct query fallback:', rpcErr);
+          codeErr = rpcErr;
+        }
+
+        // Fallback: if RPC fails, try direct table query
         if (codeErr || !codeData || !codeData.valid) {
+          console.log('[DEBUG] RPC failed or invalid, trying direct query...');
+          try {
+            const directResult = await supabase
+              .from('activation_codes')
+              .select('code, plan, max_rooms, is_used, expires_at')
+              .eq('code', code)
+              .single();
+
+            console.log('[DEBUG] Direct query result:', directResult);
+
+            if (directResult.error) {
+              throw new Error(directResult.error.message);
+            }
+
+            if (!directResult.data) {
+              showErr('codeErrorBox', 'codeErrorText',
+                'Code non trouvé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+              return;
+            }
+
+            if (directResult.data.is_used) {
+              showErr('codeErrorBox', 'codeErrorText',
+                'Code déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+              return;
+            }
+
+            if (directResult.data.expires_at && new Date(directResult.data.expires_at) < new Date()) {
+              showErr('codeErrorBox', 'codeErrorText',
+                'Code expiré.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+              return;
+            }
+
+            // Use direct data
+            codeData = {
+              valid: true,
+              plan_name: directResult.data.plan || 'basic',
+              max_rooms: directResult.data.max_rooms || 20,
+              max_users: directResult.data.plan === 'premium' ? 5 : directResult.data.plan === 'basic' ? 2 : 1
+            };
+          } catch (fallbackErr) {
+            console.error('[DEBUG] Fallback also failed:', fallbackErr);
+            showErr('codeErrorBox', 'codeErrorText',
+              'Erreur de connexion : ' + esc(fallbackErr.message) + '<br>Vérifiez votre connexion et réessayez.');
+            return;
+          }
+        }
+
+        if (!codeData || !codeData.valid) {
           showErr('codeErrorBox', 'codeErrorText',
             'Code invalide ou déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
           return;
         }
 
-        // SECURITY: Store ONLY the code string + display-only plan info in sessionStorage
+        // Store code info
         sessionStorage.setItem('ogotel_code', code);
         sessionStorage.setItem('ogotel_plan_display', JSON.stringify({
           plan_name: codeData.plan_name || 'Plan',
@@ -1319,7 +1402,7 @@
           max_users: codeData.max_users || 1
         }));
 
-        // Show success card with XSS-safe escaping
+        // Show success
         const planName = esc(codeData.plan_name || 'Plan');
         const maxRooms = esc(codeData.max_rooms || 10);
         const maxUsers = esc(codeData.max_users || 1);
@@ -1341,12 +1424,13 @@
         setTimeout(() => goToStep(2), 1200);
 
       } catch (err) {
-        console.error('Code validation error:', err);
+        console.error('[DEBUG] Code validation error:', err);
         showErr('codeErrorBox', 'codeErrorText',
-          'Une erreur est survenue.<br>Vérifiez votre connexion et réessayez.');
+          'Erreur : ' + esc(err.message) + '<br>Vérifiez votre connexion et réessayez.');
       } finally {
         btn.disabled = false;
         btn.classList.remove('loading');
+        console.log('[DEBUG] Button restored.');
       }
     }
 
@@ -1465,7 +1549,7 @@
       try {
         if (!supabase) throw new Error('Supabase non initialisé.');
 
-        // SECURITY: Re-validate activation code via RPC before creating hotel
+        // SECURITY: Re-validate activation code before creating hotel
         const storedCode = sessionStorage.getItem('ogotel_code');
         if (!storedCode) {
           showErr('adminErrorBox', 'adminErrorText',
@@ -1473,11 +1557,41 @@
           return;
         }
 
-        const { data: freshValidation, error: freshErr } = await supabase.rpc('validate_activation_code', { p_code: storedCode });
+        // Validate code — try RPC first, then direct query
+        let freshValidation, freshErr;
+        try {
+          const rpcRes = await supabase.rpc('validate_activation_code', { p_code: storedCode });
+          freshValidation = rpcRes.data;
+          freshErr = rpcRes.error;
+        } catch (e) {
+          freshErr = e;
+        }
+
         if (freshErr || !freshValidation || !freshValidation.valid) {
-          showErr('adminErrorBox', 'adminErrorText',
-            'Code d\'activation invalide. Veuillez recommencer.');
-          return;
+          // Fallback to direct query
+          try {
+            const directRes = await supabase
+              .from('activation_codes')
+              .select('code, plan, max_rooms, is_used')
+              .eq('code', storedCode)
+              .single();
+
+            if (directRes.error || !directRes.data || directRes.data.is_used) {
+              showErr('adminErrorBox', 'adminErrorText',
+                'Code d\'activation invalide ou déjà utilisé. Veuillez recommencer.');
+              return;
+            }
+            freshValidation = {
+              valid: true,
+              plan_name: directRes.data.plan || 'basic',
+              max_rooms: directRes.data.max_rooms || 20,
+              plan_id: null
+            };
+          } catch (fallbackErr) {
+            showErr('adminErrorBox', 'adminErrorText',
+              'Erreur de validation du code. Veuillez recommencer.');
+            return;
+          }
         }
 
         // 1. Auth signup
@@ -1541,11 +1655,19 @@
           console.warn('Profile creation warning:', profileErr);
         }
 
-        // 4. SECURITY: Mark code as used via RPC (not direct table update)
+        // 4. Mark code as used — try RPC first, fallback to direct update
         try {
           await supabase.rpc('use_activation_code', { p_code: storedCode });
-        } catch (codeErr) {
-          console.warn('Code marking warning:', codeErr);
+        } catch (rpcErr) {
+          console.warn('RPC use_activation_code failed, trying direct update:', rpcErr);
+          try {
+            await supabase
+              .from('activation_codes')
+              .update({ is_used: true, used_by: authData.user.id })
+              .eq('code', storedCode);
+          } catch (directErr) {
+            console.warn('Direct code update also failed:', directErr);
+          }
         }
 
         // 5. Show success
