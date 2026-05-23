@@ -1,0 +1,1786 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║                OGOTEL CLOUD — PAGE D'INSCRIPTION                    ║
+║        Inscription avec code d'activation — Côte d'Ivoire            ║
+║                     © 2025 OGOTEL Cloud                              ║
+╚══════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créer mon compte — OGOTEL Cloud</title>
+  <meta name="description" content="Activez votre espace OGOTEL Cloud avec votre code d'activation et gérez votre hôtel en Côte d'Ivoire.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Supabase v2 CDN — with fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // If CDN fails, try unpkg fallback
+    if (!window.supabase || !window.supabase.createClient) {
+      console.warn('[DEBUG] jsdelivr CDN failed, loading from unpkg...');
+      document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CSS VARIABLES & RESET
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    :root {
+      --green-primary: #1B5E20;
+      --green-hover: #145218;
+      --green-light: #F0F9F4;
+      --green-dark: #0D1F0F;
+      --green-glow: rgba(27,94,32,0.12);
+      --green-glow-strong: rgba(27,94,32,0.25);
+      --gold-accent: #F9A825;
+      --gold-hover: #E09600;
+      --bg: #FAFFFE;
+      --text-primary: #1C2B1E;
+      --text-secondary: #5A6B5E;
+      --text-muted: rgba(255,255,255,0.75);
+      --text-light: rgba(255,255,255,0.5);
+      --white: #FFFFFF;
+      --red: #DC2626;
+      --red-light: #FEF2F2;
+      --red-text: #991B1B;
+      --orange: #EA580C;
+      --yellow: #EAB308;
+      --border: rgba(27,94,32,0.12);
+      --border-focus: rgba(27,94,32,0.35);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 20px rgba(0,0,0,0.06);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.1);
+      --shadow-xl: 0 25px 60px rgba(0,0,0,0.14);
+      --radius: 12px;
+      --radius-lg: 20px;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    html {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg);
+      line-height: 1.6;
+      overflow-x: hidden;
+      height: 100vh;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LAYOUT — Split Screen
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .register-wrapper {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       LEFT PANEL
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .left-panel {
+      flex: 1;
+      background: var(--green-primary);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.08;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      z-index: 0;
+    }
+    .left-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -100px;
+      left: -100px;
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(249,168,37,0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      z-index: 0;
+    }
+    .left-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    /* Logo */
+    .reg-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 40px;
+    }
+    .reg-logo-icon {
+      width: 50px; height: 50px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      backdrop-filter: blur(6px);
+    }
+    .reg-logo-text {
+      font-family: var(--font-heading);
+      font-size: 1.8rem; font-weight: 700;
+      color: var(--white); letter-spacing: -0.02em;
+    }
+    .reg-logo-text .gold { color: var(--gold-accent); }
+
+    .left-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 700; color: var(--white);
+      line-height: 1.2; margin-bottom: 14px;
+    }
+    .left-subtitle {
+      font-size: 1rem; color: var(--text-muted);
+      line-height: 1.6; margin-bottom: 48px;
+    }
+
+    /* Steps indicator */
+    .steps-indicator {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      text-align: left;
+    }
+    .step-ind-item {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+    .step-ind-item.active {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.12);
+    }
+    .step-ind-item.completed {
+      background: rgba(255,255,255,0.04);
+    }
+    .step-ind-number {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.85rem; font-weight: 700;
+      flex-shrink: 0;
+      transition: var(--transition);
+    }
+    .step-ind-item.active .step-ind-number {
+      background: var(--gold-accent);
+      color: var(--text-primary);
+    }
+    .step-ind-item:not(.active) .step-ind-number {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.4);
+    }
+    .step-ind-item.completed .step-ind-number {
+      background: rgba(74,222,128,0.15);
+      color: #4ADE80;
+    }
+    .step-ind-info h4 {
+      font-size: 0.92rem; font-weight: 600;
+      color: var(--white); margin-bottom: 2px;
+    }
+    .step-ind-item:not(.active) .step-ind-info h4 {
+      color: rgba(255,255,255,0.5);
+    }
+    .step-ind-item.completed .step-ind-info h4 {
+      color: rgba(255,255,255,0.7);
+    }
+    .step-ind-info p {
+      font-size: 0.78rem; color: var(--text-light);
+    }
+    .step-ind-item.active .step-ind-info p {
+      color: var(--gold-accent);
+    }
+
+    /* Left panel footer */
+    .left-footer {
+      position: absolute;
+      bottom: 28px; left: 0; right: 0;
+      text-align: center; z-index: 2;
+    }
+    .left-footer a {
+      font-size: 0.85rem; font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      transition: var(--transition);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .left-footer a:hover { color: var(--white); }
+    .left-footer a svg { width: 16px; height: 16px; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RIGHT PANEL
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .right-panel {
+      flex: 1;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      position: relative;
+      overflow-y: auto;
+    }
+    .right-panel::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 250px; height: 250px;
+      background: radial-gradient(circle, rgba(27,94,32,0.04) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    /* Progress bar */
+    .progress-section {
+      width: 100%; max-width: 440px;
+      margin-bottom: 28px; position: relative; z-index: 2;
+    }
+    .progress-meta {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .progress-step-text {
+      font-family: var(--font-mono);
+      font-size: 0.78rem; font-weight: 700;
+      color: var(--green-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .progress-label-text {
+      font-size: 0.8rem; color: var(--text-secondary);
+    }
+    .progress-bar-track {
+      width: 100%; height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--green-primary), #2E7D32);
+      border-radius: 3px;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 33.33%;
+    }
+    .progress-dots {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px;
+    }
+    .progress-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: var(--transition);
+    }
+    .progress-dot.active {
+      background: var(--green-primary);
+      box-shadow: 0 0 0 3px var(--green-glow);
+    }
+    .progress-dot.done {
+      background: var(--gold-accent);
+    }
+    .progress-line {
+      flex: 1; height: 2px;
+      background: var(--border);
+      margin: 0 4px;
+    }
+    .progress-line.done { background: var(--gold-accent); }
+
+    /* Step container */
+    .steps-container {
+      width: 100%; max-width: 440px;
+      position: relative; z-index: 2;
+    }
+    .step-panel {
+      display: none;
+      animation: stepFadeIn 0.4s ease forwards;
+    }
+    .step-panel.active { display: block; }
+    @keyframes stepFadeIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Card styling */
+    .step-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 40px 36px;
+      box-shadow: var(--shadow-lg);
+    }
+    .step-header { margin-bottom: 28px; }
+    .step-header h2 {
+      font-family: var(--font-heading);
+      font-size: 1.5rem; font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px; line-height: 1.2;
+    }
+    .step-header p {
+      font-size: 0.9rem; color: var(--text-secondary);
+    }
+
+    /* ─── FORM ELEMENTS ─── */
+    .form-fields { display: flex; flex-direction: column; gap: 18px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .field-group {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .field-group.full { grid-column: 1 / -1; }
+    .field-label {
+      font-size: 0.82rem; font-weight: 600;
+      color: var(--text-primary);
+    }
+    .field-label .req { color: var(--red); }
+    .field-hint {
+      font-size: 0.75rem; color: var(--text-secondary);
+    }
+    .field-wrapper { position: relative; }
+    .field-icon-left {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none; transition: color 0.3s;
+    }
+    .field-icon-left svg { width: 18px; height: 18px; }
+    .field-wrapper:focus-within .field-icon-left {
+      color: var(--green-primary);
+    }
+
+    .field-input, .field-select {
+      width: 100%;
+      padding: 13px 16px 13px 46px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      background: var(--white);
+      transition: var(--transition);
+      outline: none;
+    }
+    .field-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235A6B5E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+    }
+    .field-input::placeholder { color: #A8B5AC; }
+    .field-input:focus, .field-select:focus {
+      border-color: var(--green-primary);
+      box-shadow: 0 0 0 4px var(--green-glow);
+    }
+    .field-input.has-error, .field-select.has-error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 4px rgba(220,38,38,0.06);
+    }
+    .field-error {
+      font-size: 0.76rem; color: var(--red);
+      min-height: 0; overflow: hidden;
+    }
+    .field-error.visible { min-height: 18px; margin-top: 3px; }
+
+    /* Code input special */
+    .code-input {
+      font-family: var(--font-mono) !important;
+      font-size: 1.3rem !important;
+      font-weight: 700 !important;
+      text-align: center !important;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 18px 16px 18px 50px !important;
+      height: 64px;
+    }
+
+    /* Password strength */
+    .strength-bar {
+      display: flex; gap: 4px; margin-top: 8px;
+    }
+    .strength-segment {
+      flex: 1; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      transition: background 0.3s ease;
+    }
+    .strength-segment.weak { background: var(--red); }
+    .strength-segment.medium { background: var(--orange); }
+    .strength-segment.strong { background: #16A34A; }
+    .strength-text {
+      font-size: 0.74rem; margin-top: 4px;
+      font-weight: 500;
+    }
+    .strength-text.weak { color: var(--red); }
+    .strength-text.medium { color: var(--orange); }
+    .strength-text.strong { color: #16A34A; }
+
+    /* Password toggle */
+    .pw-toggle {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none;
+      cursor: pointer; padding: 4px;
+      color: var(--text-secondary);
+      transition: var(--transition);
+      display: flex; align-items: center;
+    }
+    .pw-toggle:hover { color: var(--green-primary); }
+    .pw-toggle svg { width: 18px; height: 18px; }
+    .has-toggle { padding-right: 50px !important; }
+
+    /* Checkbox */
+    .checkbox-wrap {
+      display: flex; align-items: flex-start; gap: 10px;
+      cursor: pointer;
+    }
+    .checkbox-wrap input[type="checkbox"] {
+      -webkit-appearance: none; appearance: none;
+      width: 20px; height: 20px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      cursor: pointer; position: relative;
+      transition: var(--transition); flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .checkbox-wrap input[type="checkbox"]:checked {
+      background: var(--green-primary);
+      border-color: var(--green-primary);
+    }
+    .checkbox-wrap input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute; left: 6px; top: 2.5px;
+      width: 5px; height: 10px;
+      border: 2px solid var(--white);
+      border-top: none; border-left: none;
+      transform: rotate(45deg);
+    }
+    .checkbox-wrap input[type="checkbox"]:focus-visible {
+      box-shadow: 0 0 0 4px var(--green-glow);
+    }
+    .checkbox-label {
+      font-size: 0.85rem; color: var(--text-secondary);
+      line-height: 1.4; user-select: none;
+    }
+    .checkbox-label a {
+      color: var(--green-primary); font-weight: 600;
+    }
+    .checkbox-label a:hover { text-decoration: underline; }
+
+    /* Buttons */
+    .btn-row {
+      display: flex; gap: 12px; margin-top: 8px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px 24px;
+      border-radius: var(--radius);
+      font-family: var(--font-body);
+      font-size: 0.92rem; font-weight: 700;
+      border: none; cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap; position: relative;
+    }
+    .btn:hover:not(:disabled) { transform: scale(1.02); }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary {
+      flex: 1;
+      background: var(--green-primary);
+      color: var(--white);
+      box-shadow: 0 4px 16px rgba(27,94,32,0.25);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--green-hover);
+      box-shadow: 0 6px 24px rgba(27,94,32,0.35);
+    }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+    .btn-primary .spinner {
+      display: none; width: 20px; height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.25);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .btn-primary.loading .btn-label { display: none; }
+    .btn-primary.loading .spinner { display: block; }
+    .btn-outline {
+      padding: 14px 20px;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text-primary);
+    }
+    .btn-outline:hover {
+      background: var(--green-light);
+      border-color: var(--green-primary);
+      color: var(--green-primary);
+    }
+    .btn svg { width: 18px; height: 18px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error box */
+    .error-box {
+      display: none; align-items: flex-start; gap: 10px;
+      padding: 14px 16px;
+      background: var(--red-light);
+      border: 1px solid rgba(220,38,38,0.12);
+      border-radius: var(--radius);
+      animation: shake 0.4s ease;
+    }
+    .error-box.visible { display: flex; }
+    .error-box .err-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+    .error-box .err-text { font-size: 0.84rem; color: var(--red-text); line-height: 1.5; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-5px); }
+      40% { transform: translateX(5px); }
+      60% { transform: translateX(-3px); }
+      80% { transform: translateX(3px); }
+    }
+
+    /* Success confirmation card (step 1) */
+    .code-success {
+      display: none; padding: 20px;
+      background: var(--green-light);
+      border: 1px solid rgba(27,94,32,0.15);
+      border-radius: var(--radius);
+      margin-bottom: 18px;
+    }
+    .code-success.visible { display: block; }
+    .code-success-title {
+      font-weight: 700; font-size: 0.92rem;
+      color: var(--green-primary);
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .code-success-details {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .code-success-item {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.84rem; color: var(--text-secondary);
+    }
+    .code-success-item strong {
+      color: var(--text-primary);
+    }
+
+    /* Plan info */
+    .plan-info {
+      font-size: 0.8rem; color: var(--text-secondary);
+      padding: 12px 14px;
+      background: rgba(249,168,37,0.06);
+      border: 1px solid rgba(249,168,37,0.15);
+      border-radius: 10px;
+      margin-top: -8px;
+    }
+    .plan-info strong { color: var(--gold-accent); }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SUCCESS OVERLAY
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .success-overlay {
+      position: fixed; inset: 0;
+      background: var(--green-primary);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px;
+    }
+    .success-overlay.visible {
+      display: flex;
+      animation: overlayIn 0.5s ease forwards;
+    }
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .success-check {
+      width: 100px; height: 100px;
+      background: rgba(255,255,255,0.1);
+      border: 3px solid rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 32px;
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s forwards;
+      opacity: 0;
+    }
+    .success-check svg {
+      width: 48px; height: 48px;
+      color: #4ADE80; stroke-width: 3;
+    }
+    @keyframes bounceIn {
+      0% { opacity: 0; transform: scale(0.3); }
+      50% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .success-title {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700; color: var(--white);
+      margin-bottom: 12px;
+      animation: fadeUp 0.6s ease 0.4s forwards;
+      opacity: 0;
+    }
+    .success-subtitle {
+      font-size: 1.05rem; color: var(--text-muted);
+      margin-bottom: 40px;
+      animation: fadeUp 0.6s ease 0.55s forwards;
+      opacity: 0;
+    }
+    .success-progress {
+      width: 200px; height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      animation: fadeUp 0.6s ease 0.65s forwards;
+      opacity: 0;
+    }
+    .success-progress-fill {
+      height: 100%;
+      background: var(--gold-accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 2.8s linear;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-accent), var(--gold-hover));
+      color: var(--text-primary);
+      box-shadow: 0 4px 16px rgba(249,168,37,0.3);
+      padding: 16px 36px; font-size: 1rem;
+      animation: fadeUp 0.6s ease 0.8s forwards;
+      opacity: 0;
+    }
+    .btn-gold:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 24px rgba(249,168,37,0.45);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       ANIMATIONS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .fade-up {
+      opacity: 0; transform: translateY(25px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RESPONSIVE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .register-wrapper {
+        flex-direction: column;
+        min-height: 100vh; height: auto;
+      }
+      .left-panel {
+        padding: 36px 24px 28px;
+        min-height: auto;
+      }
+      .left-title { font-size: 1.5rem; margin-bottom: 10px; }
+      .left-subtitle { margin-bottom: 28px; font-size: 0.9rem; }
+      .steps-indicator {
+        flex-direction: row;
+        gap: 8px;
+        justify-content: center;
+      }
+      .step-ind-item {
+        flex-direction: column;
+        text-align: center;
+        padding: 12px;
+        gap: 8px;
+        flex: 1;
+      }
+      .step-ind-info h4 { font-size: 0.78rem; }
+      .step-ind-info p { display: none; }
+      .right-panel {
+        padding: 28px 20px 48px;
+        min-height: auto;
+      }
+      .step-card { padding: 28px 22px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .left-footer {
+        position: relative; bottom: auto;
+        margin-top: 20px;
+      }
+    }
+    @media (max-width: 480px) {
+      .btn-row { flex-direction: column; }
+      .btn-outline { order: 2; }
+      .steps-indicator { gap: 4px; }
+      .step-ind-item { padding: 8px 6px; }
+      .step-ind-number { width: 32px; height: 32px; font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="register-wrapper">
+
+    <!-- ═══════════════════════════════════
+         LEFT PANEL
+         ═══════════════════════════════════ -->
+    <div class="left-panel">
+      <div class="left-content">
+
+        <!-- Logo -->
+        <div class="reg-logo fade-up">
+          <div class="reg-logo-icon">🏨</div>
+          <div class="reg-logo-text">OGOTEL <span class="gold">Cloud</span></div>
+        </div>
+
+        <!-- Title -->
+        <h1 class="left-title fade-up delay-1">
+          Activez votre espace hôtelier
+        </h1>
+        <p class="left-subtitle fade-up delay-2">
+          Vous avez reçu votre code d'activation ?<br>
+          Créez votre compte en 3 étapes.
+        </p>
+
+        <!-- Step indicators -->
+        <div class="steps-indicator fade-up delay-3">
+          <div class="step-ind-item active" id="indStep1">
+            <div class="step-ind-number">①</div>
+            <div class="step-ind-info">
+              <h4>Code d'activation</h4>
+              <p>Validez votre code</p>
+            </div>
+          </div>
+          <div class="step-ind-item" id="indStep2">
+            <div class="step-ind-number">②</div>
+            <div class="step-ind-info">
+              <h4>Votre hôtel</h4>
+              <p>Informations de l'hôtel</p>
+            </div>
+          </div>
+          <div class="step-ind-item" id="indStep3">
+            <div class="step-ind-number">③</div>
+            <div class="step-ind-info">
+              <h4>Votre compte</h4>
+              <p>Identifiants admin</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="left-footer">
+        <a href="/landing/">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          Retour à l'accueil
+        </a>
+      </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════
+         RIGHT PANEL
+         ═══════════════════════════════════ -->
+    <div class="right-panel">
+
+      <!-- Progress -->
+      <div class="progress-section fade-up delay-1">
+        <div class="progress-meta">
+          <span class="progress-step-text" id="progressText">Étape 1 sur 3</span>
+          <span class="progress-label-text" id="progressLabel">Code d'activation</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-dots">
+          <div class="progress-dot active" id="dot1"></div>
+          <div class="progress-line" id="line1"></div>
+          <div class="progress-dot" id="dot2"></div>
+          <div class="progress-line" id="line2"></div>
+          <div class="progress-dot" id="dot3"></div>
+        </div>
+      </div>
+
+      <div id="debugBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#FEF3C7; color:#92400E; padding:8px 16px; font-size:13px; text-align:center; font-family:sans-serif; border-bottom:2px solid #F59E0B;"></div>
+      <div class="steps-container">
+
+        <!-- ═══════════════════════════════════
+             STEP 1 — Activation Code
+             ═══════════════════════════════════ -->
+        <div class="step-panel active" id="step1">
+          <div class="step-card">
+            <div class="step-header">
+              <h2>Votre code d'activation</h2>
+              <p>Code reçu par WhatsApp après votre paiement</p>
+            </div>
+
+            <!-- Error box -->
+            <div class="error-box" id="codeErrorBox">
+              <span class="err-icon">❌</span>
+              <div class="err-text" id="codeErrorText">Code invalide ou déjà utilisé.<br>Contactez-nous : +225 0576103277</div>
+            </div>
+
+            <!-- Success confirmation -->
+            <div class="code-success" id="codeSuccess">
+              <div class="code-success-title">✅ Code valide !</div>
+              <div class="code-success-details" id="codeSuccessDetails"></div>
+            </div>
+
+            <div class="form-fields">
+              <div class="field-group">
+                <div class="field-wrapper">
+                  <span class="field-icon-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                  </span>
+                  <input
+                    type="text"
+                    class="field-input code-input"
+                    id="activationCode"
+                    placeholder="OGOT-2025-XXXXXX"
+                    maxlength="20"
+                    autocomplete="off"
+                    spellcheck="false"
+                  >
+                </div>
+                <div class="field-error" id="codeFieldError"></div>
+              </div>
+
+              <button type="button" class="btn btn-primary" id="btnValidateCode" style="height:56px;">
+                <span class="btn-label">
+                  Vérifier mon code
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </span>
+                <div class="spinner"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ═══════════════════════════════════
+             STEP 2 — Hotel Info
+             ═══════════════════════════════════ -->
+        <div class="step-panel" id="step2">
+          <div class="step-card">
+            <div class="step-header">
+              <h2>Informations de votre hôtel</h2>
+              <p>Dites-nous en plus sur votre établissement</p>
+            </div>
+
+            <div class="plan-info" id="planInfo" style="margin-bottom:18px;"></div>
+
+            <div class="error-box" id="hotelErrorBox">
+              <span class="err-icon">❌</span>
+              <div class="err-text" id="hotelErrorText">Veuillez remplir tous les champs obligatoires.</div>
+            </div>
+
+            <div class="form-grid">
+              <div class="field-group">
+                <label class="field-label">🏨 Nom de l'hôtel <span class="req">*</span></label>
+                <input type="text" class="field-input" id="hotelName" placeholder="Ex: Hôtel Le Prestige" style="padding-left:16px;">
+              </div>
+              <div class="field-group">
+                <label class="field-label">🏙️ Ville <span class="req">*</span></label>
+                <select class="field-select" id="hotelCity" style="padding-left:16px;">
+                  <option value="">Sélectionnez...</option>
+                  <option value="Abidjan">Abidjan</option>
+                  <option value="Bouaké">Bouaké</option>
+                  <option value="Yamoussoukro">Yamoussoukro</option>
+                  <option value="San-Pédro">San-Pédro</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+              <div class="field-group full">
+                <label class="field-label">📍 Adresse</label>
+                <input type="text" class="field-input" id="hotelAddress" placeholder="Quartier, rue..." style="padding-left:16px;">
+              </div>
+              <div class="field-group">
+                <label class="field-label">📞 Téléphone hôtel <span class="req">*</span></label>
+                <input type="tel" class="field-input" id="hotelPhone" placeholder="+225 07 XX XX XX" style="padding-left:16px;">
+              </div>
+              <div class="field-group">
+                <label class="field-label">📧 Email hôtel</label>
+                <input type="email" class="field-input" id="hotelEmail" placeholder="contact@hotel.com" style="padding-left:16px;">
+              </div>
+              <div class="field-group full">
+                <label class="field-label">🛏️ Nombre de chambres <span class="req">*</span></label>
+                <input type="number" class="field-input" id="hotelRooms" placeholder="Ex: 20" min="1" style="padding-left:16px;">
+                <div class="field-hint" id="roomsHint"></div>
+              </div>
+            </div>
+
+            <div class="btn-row" style="margin-top:22px;">
+              <button type="button" class="btn btn-outline" id="btnBackStep1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Retour
+              </button>
+              <button type="button" class="btn btn-primary" id="btnNextStep2" style="height:52px;">
+                <span class="btn-label">
+                  Continuer
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </span>
+                <div class="spinner"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ═══════════════════════════════════
+             STEP 3 — Admin Account
+             ═══════════════════════════════════ -->
+        <div class="step-panel" id="step3">
+          <div class="step-card">
+            <div class="step-header">
+              <h2>Votre compte administrateur</h2>
+              <p>Créez vos identifiants de connexion</p>
+            </div>
+
+            <div class="error-box" id="adminErrorBox">
+              <span class="err-icon">❌</span>
+              <div class="err-text" id="adminErrorText"></div>
+            </div>
+
+            <div class="form-fields">
+              <div class="field-group">
+                <label class="field-label">👤 Nom complet <span class="req">*</span></label>
+                <input type="text" class="field-input" id="adminName" placeholder="Votre nom complet" style="padding-left:16px;">
+                <div class="field-error" id="adminNameError"></div>
+              </div>
+              <div class="field-group">
+                <label class="field-label">📧 Email <span class="req">*</span></label>
+                <div class="field-wrapper">
+                  <span class="field-icon-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  </span>
+                  <input type="email" class="field-input" id="adminEmail" placeholder="admin@email.com">
+                </div>
+                <div class="field-error" id="adminEmailError"></div>
+              </div>
+              <div class="field-group">
+                <label class="field-label">📱 WhatsApp <span class="req">*</span></label>
+                <div class="field-wrapper">
+                  <span class="field-icon-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </span>
+                  <input type="tel" class="field-input" id="adminPhone" placeholder="+225 07 XX XX XX">
+                </div>
+                <div class="field-error" id="adminPhoneError"></div>
+              </div>
+              <div class="field-group">
+                <label class="field-label">🔐 Mot de passe <span class="req">*</span></label>
+                <div class="field-wrapper">
+                  <span class="field-icon-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  </span>
+                  <input type="password" class="field-input has-toggle" id="adminPassword" placeholder="Min. 8 caractères">
+                  <button type="button" class="pw-toggle" id="pwToggle1" aria-label="Afficher le mot de passe">
+                    <svg id="eye1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg id="eyeOff1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                  </button>
+                </div>
+                <div class="strength-bar" id="strengthBar">
+                  <div class="strength-segment" id="seg1"></div>
+                  <div class="strength-segment" id="seg2"></div>
+                  <div class="strength-segment" id="seg3"></div>
+                  <div class="strength-segment" id="seg4"></div>
+                </div>
+                <div class="strength-text" id="strengthText"></div>
+                <div class="field-error" id="adminPasswordError"></div>
+              </div>
+              <div class="field-group">
+                <label class="field-label">🔐 Confirmer le mot de passe <span class="req">*</span></label>
+                <div class="field-wrapper">
+                  <span class="field-icon-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                  </span>
+                  <input type="password" class="field-input has-toggle" id="adminPasswordConfirm" placeholder="Confirmez votre mot de passe">
+                  <button type="button" class="pw-toggle" id="pwToggle2" aria-label="Afficher le mot de passe">
+                    <svg id="eye2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg id="eyeOff2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                  </button>
+                </div>
+                <div class="field-error" id="adminPasswordConfirmError"></div>
+              </div>
+
+              <label class="checkbox-wrap" id="termsWrap">
+                <input type="checkbox" id="acceptTerms">
+                <span class="checkbox-label">
+                  J'accepte les <a href="#">conditions d'utilisation</a> et la <a href="#">politique de confidentialité</a> d'OGOTEL Cloud. <span class="req">*</span>
+                </span>
+              </label>
+              <div class="field-error" id="termsError"></div>
+            </div>
+
+            <div class="btn-row" style="margin-top:22px;">
+              <button type="button" class="btn btn-outline" id="btnBackStep2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Retour
+              </button>
+              <button type="button" class="btn btn-primary" id="btnRegister" style="height:56px; flex:1.5;">
+                <span class="btn-label">
+                  Créer mon compte et activer OGOTEL Cloud
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </span>
+                <div class="spinner"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════
+       SUCCESS OVERLAY
+       ═══════════════════════════════════ -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-check">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <h2 class="success-title">Bienvenue sur OGOTEL Cloud ! 🎉</h2>
+    <p class="success-subtitle">Votre espace est prêt. Redirection vers votre dashboard...</p>
+    <div class="success-progress">
+      <div class="success-progress-fill" id="successProgressFill"></div>
+    </div>
+    <a href="/app/dashboard.html" class="btn btn-gold">
+      Accéder à mon dashboard →
+    </a>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       JAVASCRIPT
+       ═══════════════════════════════════════════════ -->
+  <script>
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ⚠️  SUPABASE CONFIGURATION — SÉCURITÉ
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+
+    let supabase = null;
+    let supabaseReady = false;
+
+    function initSupabase() {
+      try {
+        console.log('[DEBUG] initSupabase called. window.supabase =', !!window.supabase);
+        if (window.supabase && window.supabase.createClient) {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          supabaseReady = true;
+          console.log('[DEBUG] ✅ Supabase client initialized.');
+        } else {
+          console.warn('[DEBUG] ⚠️ window.supabase or createClient not found.');
+          // Show visible warning
+          const banner = document.getElementById('debugBanner');
+          if (banner) {
+            banner.textContent = '⚠️ Chargement de Supabase en cours...';
+            banner.style.display = 'block';
+          }
+        }
+      } catch (e) {
+        console.error('[DEBUG] ❌ Supabase init error:', e);
+        const banner = document.getElementById('debugBanner');
+        if (banner) {
+          banner.textContent = '❌ Erreur initialisation Supabase: ' + e.message;
+          banner.style.display = 'block';
+        }
+      }
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // XSS Protection: escape HTML entities
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    function esc(str) {
+      if (str === null || str === undefined) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SECURITY: Rate limiting for code validation
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let codeValidationAttempts = 0;
+    const MAX_CODE_ATTEMPTS = 5;
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STATE
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    let currentStep = 1;
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP NAVIGATION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const steps = ['step1', 'step2', 'step3'];
+    const indSteps = ['indStep1', 'indStep2', 'indStep3'];
+    const progressLabels = ['Code d\'activation', 'Votre hôtel', 'Votre compte'];
+
+    function goToStep(step) {
+      currentStep = step;
+
+      // Panels
+      steps.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.classList.toggle('active', i + 1 === step);
+      });
+
+      // Indicators
+      indSteps.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.classList.remove('active', 'completed');
+        if (i + 1 === step) el.classList.add('active');
+        if (i + 1 < step) el.classList.add('completed');
+      });
+
+      // Progress
+      document.getElementById('progressText').textContent = `Étape ${step} sur 3`;
+      document.getElementById('progressLabel').textContent = progressLabels[step - 1];
+      document.getElementById('progressFill').style.width = `${(step / 3) * 100}%`;
+
+      // Dots
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById(`dot${i}`);
+        dot.classList.remove('active', 'done');
+        if (i === step) dot.classList.add('active');
+        if (i < step) dot.classList.add('done');
+      }
+      for (let i = 1; i <= 2; i++) {
+        const line = document.getElementById(`line${i}`);
+        line.classList.toggle('done', i < step);
+      }
+
+      // Scroll right panel to top
+      document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // PASSWORD TOGGLES
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function setupToggle(toggleId, inputId, eyeId, eyeOffId) {
+      const toggle = document.getElementById(toggleId);
+      const input = document.getElementById(inputId);
+      const eye = document.getElementById(eyeId);
+      const eyeOff = document.getElementById(eyeOffId);
+
+      toggle.addEventListener('click', () => {
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        eye.style.display = isPass ? 'none' : 'block';
+        eyeOff.style.display = isPass ? 'block' : 'none';
+      });
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // PASSWORD STRENGTH
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function checkPasswordStrength(pw) {
+      let score = 0;
+      if (pw.length >= 8) score++;
+      if (pw.length >= 12) score++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^A-Za-z0-9]/.test(pw)) score++;
+      return Math.min(score, 4);
+    }
+
+    function updateStrengthUI(score) {
+      const labels = ['', 'Faible', 'Moyen', 'Bon', 'Fort'];
+      const classes = ['', 'weak', 'medium', 'strong', 'strong'];
+
+      for (let i = 1; i <= 4; i++) {
+        const seg = document.getElementById(`seg${i}`);
+        seg.className = 'strength-segment';
+        if (i <= score) seg.classList.add(classes[score]);
+      }
+
+      const textEl = document.getElementById('strengthText');
+      textEl.className = 'strength-text ' + (classes[score] || '');
+      textEl.textContent = score > 0 ? labels[score] : '';
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // HELPERS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function showErr(boxId, textId, msg) {
+      document.getElementById(textId).innerHTML = msg;
+      document.getElementById(boxId).classList.add('visible');
+    }
+    function hideErr(boxId) {
+      document.getElementById(boxId).classList.remove('visible');
+    }
+    function showFieldErr(inputEl, errEl, msg) {
+      if (inputEl) inputEl.classList.add('has-error');
+      if (errEl) { errEl.textContent = msg; errEl.classList.add('visible'); }
+    }
+    function clearFieldErr(inputEl, errEl) {
+      if (inputEl) inputEl.classList.remove('has-error');
+      if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
+    }
+    function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 1 — Validate Code
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    async function validateCode() {
+      console.log('[DEBUG] validateCode() called');
+      const codeInput = document.getElementById('activationCode');
+      const code = codeInput.value.trim().toUpperCase();
+      const codeFieldError = document.getElementById('codeFieldError');
+      const btn = document.getElementById('btnValidateCode');
+
+      hideErr('codeErrorBox');
+      clearFieldErr(codeInput, codeFieldError);
+
+      if (!code) {
+        showFieldErr(codeInput, codeFieldError, 'Veuillez entrer votre code d\'activation.');
+        return;
+      }
+      if (code.length < 5) {
+        showFieldErr(codeInput, codeFieldError, 'Le code est trop court.');
+        return;
+      }
+
+      // Rate limiting check
+      codeValidationAttempts++;
+      if (codeValidationAttempts > MAX_CODE_ATTEMPTS) {
+        btn.disabled = true;
+        btn.textContent = 'Trop de tentatives. Réessayez plus tard.';
+        showErr('codeErrorBox', 'codeErrorText',
+          'Trop de tentatives de validation.<br>Attendez quelques minutes ou contactez-nous : <strong>+225 0576103277</strong>');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.classList.add('loading');
+      console.log('[DEBUG] Button loading state set. Calling Supabase RPC...');
+
+      try {
+        if (!supabase) {
+          console.error('[DEBUG] supabase is null! Attempting re-init...');
+          initSupabase();
+          if (!supabase) throw new Error('Supabase non initialisé. Rechargez la page.');
+        }
+
+        // Try RPC first
+        console.log('[DEBUG] Calling validate_activation_code RPC with code:', code);
+        let codeData, codeErr;
+
+        try {
+          const rpcResult = await supabase.rpc('validate_activation_code', { p_code: code });
+          codeData = rpcResult.data;
+          codeErr = rpcResult.error;
+          console.log('[DEBUG] RPC result:', { codeData, codeErr });
+        } catch (rpcErr) {
+          console.warn('[DEBUG] RPC failed, trying direct query fallback:', rpcErr);
+          codeErr = rpcErr;
+        }
+
+        // Fallback: if RPC fails, try direct table query
+        if (codeErr || !codeData || !codeData.valid) {
+          console.log('[DEBUG] RPC failed or invalid, trying direct query...');
+          try {
+            const directResult = await supabase
+              .from('activation_codes')
+              .select('code, plan, max_rooms, is_used, expires_at')
+              .eq('code', code)
+              .single();
+
+            console.log('[DEBUG] Direct query result:', directResult);
+
+            if (directResult.error) {
+              throw new Error(directResult.error.message);
+            }
+
+            if (!directResult.data) {
+              showErr('codeErrorBox', 'codeErrorText',
+                'Code non trouvé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+              return;
+            }
+
+            if (directResult.data.is_used) {
+              showErr('codeErrorBox', 'codeErrorText',
+                'Code déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+              return;
+            }
+
+            if (directResult.data.expires_at && new Date(directResult.data.expires_at) < new Date()) {
+              showErr('codeErrorBox', 'codeErrorText',
+                'Code expiré.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+              return;
+            }
+
+            // Use direct data
+            codeData = {
+              valid: true,
+              plan_name: directResult.data.plan || 'basic',
+              max_rooms: directResult.data.max_rooms || 20,
+              max_users: directResult.data.plan === 'premium' ? 5 : directResult.data.plan === 'basic' ? 2 : 1
+            };
+          } catch (fallbackErr) {
+            console.error('[DEBUG] Fallback also failed:', fallbackErr);
+            showErr('codeErrorBox', 'codeErrorText',
+              'Erreur de connexion : ' + esc(fallbackErr.message) + '<br>Vérifiez votre connexion et réessayez.');
+            return;
+          }
+        }
+
+        if (!codeData || !codeData.valid) {
+          showErr('codeErrorBox', 'codeErrorText',
+            'Code invalide ou déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
+          return;
+        }
+
+        // Store code info
+        sessionStorage.setItem('ogotel_code', code);
+        sessionStorage.setItem('ogotel_plan_display', JSON.stringify({
+          plan_name: codeData.plan_name || 'Plan',
+          max_rooms: codeData.max_rooms || 10,
+          max_users: codeData.max_users || 1
+        }));
+
+        // Show success
+        const planName = esc(codeData.plan_name || 'Plan');
+        const maxRooms = esc(codeData.max_rooms || 10);
+        const maxUsers = esc(codeData.max_users || 1);
+
+        document.getElementById('codeSuccessDetails').innerHTML = `
+          <div class="code-success-item">
+            <span>📦</span> <strong>${planName}</strong> activé
+          </div>
+          <div class="code-success-item">
+            <span>🛏️</span> Jusqu'à <strong>${maxRooms} chambres</strong>
+          </div>
+          <div class="code-success-item">
+            <span>👤</span> <strong>${maxUsers} utilisateur(s)</strong>
+          </div>
+        `;
+        document.getElementById('codeSuccess').classList.add('visible');
+
+        // Auto-advance to step 2
+        setTimeout(() => goToStep(2), 1200);
+
+      } catch (err) {
+        console.error('[DEBUG] Code validation error:', err);
+        showErr('codeErrorBox', 'codeErrorText',
+          'Erreur : ' + esc(err.message) + '<br>Vérifiez votre connexion et réessayez.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        console.log('[DEBUG] Button restored.');
+      }
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 2 — Validate Hotel Info
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function validateStep2() {
+      const name = document.getElementById('hotelName').value.trim();
+      const city = document.getElementById('hotelCity').value;
+      const phone = document.getElementById('hotelPhone').value.trim();
+      const email = document.getElementById('hotelEmail').value.trim();
+      const address = document.getElementById('hotelAddress').value.trim();
+      const rooms = parseInt(document.getElementById('hotelRooms').value, 10);
+
+      hideErr('hotelErrorBox');
+      let hasError = false;
+
+      if (!name) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nom de l\'hôtel est requis.'); return false; }
+      if (!city) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez sélectionner une ville.'); return false; }
+      if (!phone) { showErr('hotelErrorBox', 'hotelErrorText', 'Le téléphone de l\'hôtel est requis.'); return false; }
+      if (email && !isValidEmail(email)) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez entrer un email valide.'); return false; }
+
+      // Read max_rooms from display-only sessionStorage
+      let maxRooms = 10;
+      try {
+        const planDisplay = JSON.parse(sessionStorage.getItem('ogotel_plan_display') || '{}');
+        maxRooms = parseInt(planDisplay.max_rooms, 10) || 10;
+      } catch(e) { /* fallback to 10 */ }
+
+      if (!rooms || rooms < 1) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nombre de chambres est requis.'); return false; }
+      if (rooms > maxRooms) {
+        showErr('hotelErrorBox', 'hotelErrorText',
+          `Votre plan permet au maximum <strong>${esc(maxRooms)} chambres</strong>. Pour plus, contactez-nous.`);
+        return false;
+      }
+
+      // Store hotel info (NOT plan info — that will be re-validated from server on submit)
+      sessionStorage.setItem('hotel_name', name);
+      sessionStorage.setItem('hotel_city', city);
+      sessionStorage.setItem('hotel_address', address);
+      sessionStorage.setItem('hotel_phone', phone);
+      sessionStorage.setItem('hotel_email', email);
+      sessionStorage.setItem('hotel_rooms', String(rooms));
+
+      return true;
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 3 — Validate Admin Info
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function validateStep3() {
+      hideErr('adminErrorBox');
+
+      const name = document.getElementById('adminName').value.trim();
+      const email = document.getElementById('adminEmail').value.trim();
+      const phone = document.getElementById('adminPhone').value.trim();
+      const pw = document.getElementById('adminPassword').value;
+      const pwConfirm = document.getElementById('adminPasswordConfirm').value;
+      const terms = document.getElementById('acceptTerms').checked;
+
+      let hasError = false;
+
+      clearFieldErr(document.getElementById('adminName'), document.getElementById('adminNameError'));
+      clearFieldErr(document.getElementById('adminEmail'), document.getElementById('adminEmailError'));
+      clearFieldErr(document.getElementById('adminPhone'), document.getElementById('adminPhoneError'));
+      clearFieldErr(document.getElementById('adminPassword'), document.getElementById('adminPasswordError'));
+      clearFieldErr(document.getElementById('adminPasswordConfirm'), document.getElementById('adminPasswordConfirmError'));
+      document.getElementById('termsError').textContent = '';
+      document.getElementById('termsError').classList.remove('visible');
+
+      if (!name) { showFieldErr(document.getElementById('adminName'), document.getElementById('adminNameError'), 'Nom complet requis.'); hasError = true; }
+      if (!email || !isValidEmail(email)) { showFieldErr(document.getElementById('adminEmail'), document.getElementById('adminEmailError'), 'Email valide requis.'); hasError = true; }
+      if (!phone || phone.replace(/\s/g, '').length < 10) { showFieldErr(document.getElementById('adminPhone'), document.getElementById('adminPhoneError'), 'Numéro WhatsApp valide requis.'); hasError = true; }
+      if (!pw || pw.length < 8) { showFieldErr(document.getElementById('adminPassword'), document.getElementById('adminPasswordError'), 'Minimum 8 caractères requis.'); hasError = true; }
+      if (pw !== pwConfirm) { showFieldErr(document.getElementById('adminPasswordConfirm'), document.getElementById('adminPasswordConfirmError'), 'Les mots de passe ne correspondent pas.'); hasError = true; }
+      if (!terms) {
+        document.getElementById('termsError').textContent = 'Vous devez accepter les conditions.';
+        document.getElementById('termsError').classList.add('visible');
+        hasError = true;
+      }
+
+      if (hasError) return false;
+
+      return {
+        fullName: name,
+        email: email,
+        phone: phone,
+        password: pw
+      };
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // REGISTRATION — Full flow
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function getEndDate() {
+      const d = new Date();
+      d.setFullYear(d.getFullYear() + 1);
+      return d.toISOString().split('T')[0];
+    }
+
+    async function registerUser() {
+      const formData = validateStep3();
+      if (!formData) return;
+
+      const btn = document.getElementById('btnRegister');
+      btn.disabled = true;
+      btn.classList.add('loading');
+      hideErr('adminErrorBox');
+
+      try {
+        if (!supabase) throw new Error('Supabase non initialisé.');
+
+        // SECURITY: Re-validate activation code before creating hotel
+        const storedCode = sessionStorage.getItem('ogotel_code');
+        if (!storedCode) {
+          showErr('adminErrorBox', 'adminErrorText',
+            'Code d\'activation introuvable. Veuillez recommencer.');
+          return;
+        }
+
+        // Validate code — try RPC first, then direct query
+        let freshValidation, freshErr;
+        try {
+          const rpcRes = await supabase.rpc('validate_activation_code', { p_code: storedCode });
+          freshValidation = rpcRes.data;
+          freshErr = rpcRes.error;
+        } catch (e) {
+          freshErr = e;
+        }
+
+        if (freshErr || !freshValidation || !freshValidation.valid) {
+          // Fallback to direct query
+          try {
+            const directRes = await supabase
+              .from('activation_codes')
+              .select('code, plan, max_rooms, is_used')
+              .eq('code', storedCode)
+              .single();
+
+            if (directRes.error || !directRes.data || directRes.data.is_used) {
+              showErr('adminErrorBox', 'adminErrorText',
+                'Code d\'activation invalide ou déjà utilisé. Veuillez recommencer.');
+              return;
+            }
+            freshValidation = {
+              valid: true,
+              plan_name: directRes.data.plan || 'basic',
+              max_rooms: directRes.data.max_rooms || 20,
+              plan_id: null
+            };
+          } catch (fallbackErr) {
+            showErr('adminErrorBox', 'adminErrorText',
+              'Erreur de validation du code. Veuillez recommencer.');
+            return;
+          }
+        }
+
+        // 1. Auth signup
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName,
+              role: 'hotel_admin'
+            }
+          }
+        });
+
+        if (authError) {
+          if (authError.message.includes('already registered')) {
+            showErr('adminErrorBox', 'adminErrorText', 'Cet email est déjà utilisé.<br>Connectez-vous ou utilisez un autre email.');
+          } else {
+            showErr('adminErrorBox', 'adminErrorText', `Erreur : ${esc(authError.message)}`);
+          }
+          return;
+        }
+
+        if (!authData || !authData.user) {
+          showErr('adminErrorBox', 'adminErrorText', 'Erreur lors de la création du compte. Réessayez.');
+          return;
+        }
+
+        // 2. Create hotel — use SERVER-VALIDATED values from freshValidation, NOT sessionStorage
+        const { data: hotelData, error: hotelError } = await supabase
+          .from('hotels')
+          .insert({
+            name: sessionStorage.getItem('hotel_name'),
+            city: sessionStorage.getItem('hotel_city'),
+            address: sessionStorage.getItem('hotel_address') || null,
+            phone: sessionStorage.getItem('hotel_phone'),
+            email: sessionStorage.getItem('hotel_email') || null,
+            plan_name: freshValidation.plan_name || 'Plan',
+            plan_id: freshValidation.plan_id || null,
+            activation_code: storedCode,
+            subscription_start: new Date().toISOString().split('T')[0],
+            subscription_end: getEndDate()
+          })
+          .select()
+          .single();
+
+        if (hotelError) {
+          console.warn('Hotel creation warning:', hotelError);
+        }
+
+        // 3. Create profile
+        try {
+          await supabase.from('user_profiles').insert({
+            id: authData.user.id,
+            hotel_id: hotelData?.id || null,
+            full_name: formData.fullName,
+            phone: formData.phone,
+            role: 'hotel_admin'
+          });
+        } catch (profileErr) {
+          console.warn('Profile creation warning:', profileErr);
+        }
+
+        // 4. Mark code as used — try RPC first, fallback to direct update
+        try {
+          await supabase.rpc('use_activation_code', { p_code: storedCode });
+        } catch (rpcErr) {
+          console.warn('RPC use_activation_code failed, trying direct update:', rpcErr);
+          try {
+            await supabase
+              .from('activation_codes')
+              .update({ is_used: true, used_by: authData.user.id })
+              .eq('code', storedCode);
+          } catch (directErr) {
+            console.warn('Direct code update also failed:', directErr);
+          }
+        }
+
+        // 5. Show success
+        showSuccessOverlay();
+
+      } catch (err) {
+        console.error('Registration error:', err);
+        showErr('adminErrorBox', 'adminErrorText',
+          'Une erreur est survenue.<br>Vérifiez votre connexion et réessayez.');
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+      }
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SUCCESS OVERLAY
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function showSuccessOverlay() {
+      const overlay = document.getElementById('successOverlay');
+      overlay.classList.add('visible');
+
+      // Animate progress bar
+      setTimeout(() => {
+        document.getElementById('successProgressFill').style.width = '100%';
+      }, 100);
+
+      // Auto redirect after 3.5s
+      setTimeout(() => {
+        window.location.href = '/app/dashboard.html';
+      }, 3500);
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // INIT — Event listeners
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSupabase();
+      setupToggle('pwToggle1', 'adminPassword', 'eye1', 'eyeOff1');
+      setupToggle('pwToggle2', 'adminPasswordConfirm', 'eye2', 'eyeOff2');
+
+      // Step 1: Code validation
+      document.getElementById('btnValidateCode').addEventListener('click', validateCode);
+      document.getElementById('activationCode').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') validateCode();
+      });
+
+      // Auto uppercase code input
+      document.getElementById('activationCode').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+      });
+
+      // Step 2: Navigation
+      document.getElementById('btnBackStep1').addEventListener('click', () => goToStep(1));
+      document.getElementById('btnNextStep2').addEventListener('click', () => {
+        if (validateStep2()) goToStep(3);
+      });
+
+      // Step 3: Navigation + Register
+      document.getElementById('btnBackStep2').addEventListener('click', () => goToStep(2));
+      document.getElementById('btnRegister').addEventListener('click', registerUser);
+
+      // Password strength
+      document.getElementById('adminPassword').addEventListener('input', function() {
+        updateStrengthUI(checkPasswordStrength(this.value));
+      });
+
+      // Confirm password match — real-time
+      document.getElementById('adminPasswordConfirm').addEventListener('input', function() {
+        const pw = document.getElementById('adminPassword').value;
+        const errEl = document.getElementById('adminPasswordConfirmError');
+        const inputEl = this;
+        if (this.value && this.value !== pw) {
+          showFieldErr(inputEl, errEl, 'Les mots de passe ne correspondent pas.');
+        } else {
+          clearFieldErr(inputEl, errEl);
+        }
+      });
+
+      // Populate plan info when step 2 becomes visible — use display-only sessionStorage
+      const observer = new MutationObserver(() => {
+        if (document.getElementById('step2').classList.contains('active')) {
+          let planName = 'Plan';
+          let maxRooms = 10;
+          try {
+            const planDisplay = JSON.parse(sessionStorage.getItem('ogotel_plan_display') || '{}');
+            planName = planDisplay.plan_name || 'Plan';
+            maxRooms = planDisplay.max_rooms || 10;
+          } catch(e) { /* fallback defaults */ }
+          document.getElementById('planInfo').innerHTML =
+            `📦 Votre plan <strong>${esc(planName)}</strong> permet jusqu'à <strong>${esc(maxRooms)} chambres</strong>`;
+          document.getElementById('roomsHint').textContent =
+            `Maximum autorisé par votre plan : ${maxRooms} chambres`;
+          const roomsInput = document.getElementById('hotelRooms');
+          roomsInput.max = maxRooms;
+        }
+      });
+      observer.observe(document.getElementById('step2'), { attributes: true, attributeFilter: ['class'] });
+
+      // Clear errors on input focus
+      document.querySelectorAll('.field-input, .field-select').forEach(input => {
+        input.addEventListener('focus', function() {
+          this.classList.remove('has-error');
+          const errEl = this.closest('.field-group')?.querySelector('.field-error');
+          if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>

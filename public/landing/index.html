@@ -1,0 +1,2119 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║                    OGOTEL CLOUD — LANDING PAGE                       ║
+║              SaaS de gestion hôtelière — Côte d'Ivoire               ║
+║                     © 2025 OGOTEL Cloud                              ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗄️  SQL SUPABASE — À exécuter dans Supabase Dashboard
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREATE TABLE landing_requests (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  hotel_name TEXT NOT NULL,
+  contact_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  city TEXT,
+  number_of_rooms TEXT,
+  selected_plan TEXT,
+  message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE landing_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public insert"
+ON landing_requests
+FOR INSERT
+TO anon
+WITH CHECK (true);
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OGOTEL Cloud — Gestion Hôtelière en Côte d'Ivoire</title>
+  <meta name="description" content="OGOTEL Cloud : la 1ère solution cloud pour gérer votre hôtel en Côte d'Ivoire. Réservations, chambres, personnel et revenus depuis n'importe quel appareil.">
+  <meta name="keywords" content="hôtel, gestion hôtelière, Côte d'Ivoire, Abidjan, SaaS, OGOTEL, cloud, réservation">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Supabase v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       CSS VARIABLES & RESET
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    :root {
+      --green-primary: #1B5E20;
+      --green-light: #F0F9F4;
+      --green-dark: #0D1F0F;
+      --gold-accent: #F9A825;
+      --gold-hover: #E09600;
+      --bg: #FAFFFE;
+      --bg-dark: #0D1F0F;
+      --text-primary: #1C2B1E;
+      --text-secondary: #5A6B5E;
+      --text-light: rgba(255,255,255,0.7);
+      --white: #FFFFFF;
+      --red: #DC2626;
+      --orange: #EA580C;
+      --border-light: rgba(27,94,32,0.1);
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
+      --shadow-xl: 0 25px 60px rgba(0,0,0,0.15);
+      --radius: 12px;
+      --radius-lg: 20px;
+      --font-heading: 'Playfair Display', Georgia, serif;
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+      --max-width: 1200px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      background: var(--bg);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    img { max-width: 100%; display: block; }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       REVEAL ANIMATIONS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 1: NAVBAR
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      padding: 16px 0;
+      transition: var(--transition);
+    }
+    .navbar.scrolled {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      padding: 10px 0;
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--white);
+      transition: var(--transition);
+    }
+    .navbar.scrolled .nav-logo { color: var(--green-primary); }
+    .nav-logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--green-primary), #2E7D32);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-accent);
+      font-size: 1.1rem;
+    }
+    .nav-logo span { color: var(--gold-accent); }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    .nav-links a {
+      font-size: 0.925rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      transition: var(--transition);
+      position: relative;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--gold-accent);
+      transition: width 0.3s ease;
+    }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-links a:hover { color: var(--white); }
+    .navbar.scrolled .nav-links a { color: var(--text-secondary); }
+    .navbar.scrolled .nav-links a:hover { color: var(--green-primary); }
+    .navbar.scrolled .nav-links a::after { background: var(--green-primary); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .btn:hover { transform: scale(1.03); }
+    .btn:active { transform: scale(0.98); }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      color: var(--white);
+    }
+    .btn-outline:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.7);
+    }
+    .navbar.scrolled .btn-outline {
+      border-color: var(--green-primary);
+      color: var(--green-primary);
+    }
+    .navbar.scrolled .btn-outline:hover {
+      background: rgba(27,94,32,0.06);
+    }
+    .btn-primary {
+      background: var(--green-primary);
+      color: var(--white);
+      box-shadow: 0 4px 14px rgba(27,94,32,0.3);
+    }
+    .btn-primary:hover {
+      background: #145218;
+      box-shadow: 0 6px 20px rgba(27,94,32,0.4);
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold-accent), var(--gold-hover));
+      color: var(--text-primary);
+      box-shadow: 0 4px 14px rgba(249,168,37,0.35);
+      font-weight: 700;
+    }
+    .btn-gold:hover {
+      box-shadow: 0 6px 24px rgba(249,168,37,0.5);
+      transform: scale(1.04);
+    }
+    .btn-large {
+      padding: 16px 36px;
+      font-size: 1.05rem;
+      border-radius: 14px;
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: var(--white);
+      backdrop-filter: blur(8px);
+    }
+    .btn-ghost:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: rgba(255,255,255,0.4);
+    }
+
+    /* Hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 8px;
+      z-index: 1001;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2.5px;
+      background: var(--white);
+      border-radius: 2px;
+      transition: var(--transition);
+    }
+    .navbar.scrolled .hamburger span { background: var(--text-primary); }
+    .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(13,31,15,0.97);
+      backdrop-filter: blur(20px);
+      z-index: 999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .mobile-menu.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .mobile-menu a {
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--white);
+      transition: var(--transition);
+    }
+    .mobile-menu a:hover { color: var(--gold-accent); }
+    .mobile-menu .btn { margin-top: 12px; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 2: HERO
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px 80px;
+      background: linear-gradient(160deg, #0D1F0F 0%, #1B5E20 40%, #2E7D32 70%, #1B5E20 100%);
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -30%;
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(249,168,37,0.08) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -20%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: rgba(249,168,37,0.15);
+      border: 1px solid rgba(249,168,37,0.3);
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gold-accent);
+      margin-bottom: 32px;
+      backdrop-filter: blur(8px);
+    }
+    .hero h1 {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.15;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+    .hero h1 .gold { color: var(--gold-accent); }
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-light);
+      line-height: 1.7;
+      max-width: 620px;
+      margin: 0 auto 40px;
+    }
+    .hero-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 60px;
+    }
+    .hero-mockup {
+      position: relative;
+      max-width: 700px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      backdrop-filter: blur(12px);
+      padding: 24px;
+      overflow: hidden;
+    }
+    .mockup-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .mockup-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .mockup-dot.red { background: #FF5F57; }
+    .mockup-dot.yellow { background: #FFBD2E; }
+    .mockup-dot.green { background: #28C840; }
+    .mockup-titlebar span {
+      margin-left: 12px;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.4);
+      font-family: var(--font-mono);
+    }
+    .mockup-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .mockup-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: left;
+    }
+    .mockup-card-label {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .mockup-card-value {
+      font-family: var(--font-mono);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .mockup-card-value.green { color: #4ADE80; }
+    .mockup-card-value.gold { color: var(--gold-accent); }
+    .mockup-card-sub {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 4px;
+    }
+    .mockup-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .mockup-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #4ADE80, var(--gold-accent));
+      width: 60%;
+    }
+
+    /* Floating badges */
+    .floating-badges {
+      position: absolute;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .float-badge {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50px;
+      backdrop-filter: blur(12px);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--white);
+      white-space: nowrap;
+      animation: float 6s ease-in-out infinite;
+    }
+    .float-badge:nth-child(1) {
+      top: 25%;
+      left: -10%;
+      animation-delay: 0s;
+    }
+    .float-badge:nth-child(2) {
+      top: 35%;
+      right: -8%;
+      animation-delay: 2s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-14px); }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 3: PROBLÈMES
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .problems {
+      padding: 100px 0;
+      background: var(--bg);
+    }
+    .section-header {
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto 60px;
+    }
+    .section-label {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold-accent);
+      margin-bottom: 16px;
+    }
+    .section-header h2 {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+    .section-header p {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .problems-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+    .problem-card {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-left: 4px solid var(--red);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: var(--transition);
+    }
+    .problem-card:nth-child(2) { border-left-color: var(--orange); }
+    .problem-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .problem-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+    .problem-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+    .problem-card p {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 4: FONCTIONNALITÉS
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .features {
+      padding: 100px 0;
+      background: var(--green-light);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green-primary), var(--gold-accent));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .feature-card:hover::before { transform: scaleX(1); }
+    .feature-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .feature-icon-wrap {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, rgba(27,94,32,0.08), rgba(27,94,32,0.15));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+    }
+    .feature-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+    .feature-card p {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 5: COMMENT ÇA MARCHE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .how-it-works {
+      padding: 100px 0;
+      background: var(--bg-dark);
+      color: var(--white);
+    }
+    .how-it-works .section-header h2 { color: var(--white); }
+    .how-it-works .section-header p { color: var(--text-light); }
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 40px;
+      position: relative;
+    }
+    .step-card {
+      text-align: center;
+      position: relative;
+    }
+    .step-number {
+      font-family: var(--font-mono);
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--gold-accent);
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+    .step-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .step-card p {
+      font-size: 0.95rem;
+      color: var(--text-light);
+      line-height: 1.7;
+      max-width: 300px;
+      margin: 0 auto;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 6: TÉMOIGNAGES
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .testimonials {
+      padding: 100px 0;
+      background: var(--bg);
+    }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .testimonial-card {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: var(--transition);
+    }
+    .testimonial-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+    .testimonial-stars {
+      color: var(--gold-accent);
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+    .testimonial-text {
+      font-size: 1rem;
+      color: var(--text-primary);
+      line-height: 1.7;
+      margin-bottom: 24px;
+      font-style: italic;
+    }
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-light);
+    }
+    .testimonial-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--white);
+    }
+    .testimonial-avatar.av-1 { background: linear-gradient(135deg, #1B5E20, #2E7D32); }
+    .testimonial-avatar.av-2 { background: linear-gradient(135deg, #0D47A1, #1565C0); }
+    .testimonial-avatar.av-3 { background: linear-gradient(135deg, #4A148C, #7B1FA2); }
+    .testimonial-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+    .testimonial-role {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 7: TARIFICATION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .pricing {
+      padding: 100px 0;
+      background: var(--green-light);
+    }
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .pricing-card {
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      transition: var(--transition);
+      position: relative;
+    }
+    .pricing-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-6px);
+    }
+    .pricing-card.featured {
+      background: var(--green-primary);
+      border-color: var(--green-primary);
+      color: var(--white);
+      transform: scale(1.04);
+      box-shadow: 0 20px 60px rgba(27,94,32,0.3);
+    }
+    .pricing-card.featured:hover {
+      transform: scale(1.06);
+      box-shadow: 0 25px 70px rgba(27,94,32,0.4);
+    }
+    .pricing-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 20px;
+      background: linear-gradient(135deg, var(--gold-accent), var(--gold-hover));
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-radius: 50px;
+      white-space: nowrap;
+    }
+    .pricing-plan-name {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold-accent);
+      margin-bottom: 16px;
+    }
+    .pricing-price {
+      font-family: var(--font-mono);
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .pricing-price span {
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0.6;
+    }
+    .pricing-card.featured .pricing-plan-name { color: var(--gold-accent); }
+    .pricing-card.featured .pricing-price { color: var(--white); }
+    .pricing-divider {
+      height: 1px;
+      background: var(--border-light);
+      margin: 24px 0;
+    }
+    .pricing-card.featured .pricing-divider { background: rgba(255,255,255,0.15); }
+    .pricing-features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .pricing-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.92rem;
+    }
+    .pricing-card.featured .pricing-feature { color: rgba(255,255,255,0.9); }
+    .pricing-check {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(27,94,32,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--green-primary);
+      font-size: 0.7rem;
+    }
+    .pricing-card.featured .pricing-check {
+      background: rgba(255,255,255,0.15);
+      color: #4ADE80;
+    }
+    .pricing-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      font-weight: 700;
+      border: 2px solid var(--green-primary);
+      background: transparent;
+      color: var(--green-primary);
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+    .pricing-btn:hover {
+      background: var(--green-primary);
+      color: var(--white);
+      transform: scale(1.03);
+    }
+    .pricing-card.featured .pricing-btn {
+      background: var(--gold-accent);
+      border-color: var(--gold-accent);
+      color: var(--text-primary);
+    }
+    .pricing-card.featured .pricing-btn:hover {
+      background: var(--gold-hover);
+      border-color: var(--gold-hover);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 8: FORMULAIRE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .form-section {
+      padding: 100px 0;
+      background: var(--bg);
+    }
+    .form-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 48px 40px;
+      box-shadow: var(--shadow-xl);
+    }
+    .form-title {
+      font-family: var(--font-heading);
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .form-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 36px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .form-label .optional {
+      font-weight: 400;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+    .form-hint {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border-light);
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      background: var(--bg);
+      transition: var(--transition);
+      outline: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--green-primary);
+      box-shadow: 0 0 0 3px rgba(27,94,32,0.1);
+    }
+    .form-input.error, .form-select.error, .form-textarea.error {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(220,38,38,0.08);
+    }
+    .form-error {
+      font-size: 0.78rem;
+      color: var(--red);
+      min-height: 18px;
+    }
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .form-submit {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--green-primary), #2E7D32);
+      color: var(--white);
+      box-shadow: 0 4px 14px rgba(27,94,32,0.3);
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .form-submit:hover:not(:disabled) {
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(27,94,32,0.4);
+    }
+    .form-submit:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .form-submit .spinner {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    .form-submit.loading .spinner { display: block; }
+    .form-submit.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       TOAST NOTIFICATION
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toast {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 18px 22px;
+      border-radius: 14px;
+      background: var(--white);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-xl);
+      max-width: 420px;
+      animation: toastIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .toast.toast-out {
+      animation: toastOut 0.3s ease forwards;
+    }
+    .toast-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 2px; }
+    .toast-content { flex: 1; }
+    .toast-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      margin-bottom: 4px;
+    }
+    .toast-message {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .toast-close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      padding: 4px;
+      transition: var(--transition);
+    }
+    .toast-close:hover { color: var(--text-primary); }
+    .toast-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      border-radius: 0 0 14px 14px;
+      animation: toastProgress 4s linear forwards;
+    }
+    .toast.success .toast-progress { background: var(--green-primary); }
+    .toast.error .toast-progress { background: var(--red); }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(40px) scale(0.95); }
+      to { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes toastOut {
+      to { opacity: 0; transform: translateX(40px) scale(0.95); }
+    }
+    @keyframes toastProgress {
+      from { width: 100%; }
+      to { width: 0%; }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 9: CTA FINAL
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .final-cta {
+      padding: 100px 0;
+      background: linear-gradient(160deg, #0D1F0F 0%, #1B5E20 50%, #2E7D32 100%);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(249,168,37,0.06) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .final-cta h2 {
+      font-family: var(--font-heading);
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .final-cta .btn-gold {
+      animation: pulse 2.5s ease-in-out infinite;
+      position: relative;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 4px 14px rgba(249,168,37,0.35); }
+      50% { box-shadow: 0 4px 30px rgba(249,168,37,0.6); }
+    }
+    .cta-contact {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .cta-contact a {
+      color: var(--text-light);
+      font-size: 0.95rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cta-contact a:hover { color: var(--white); }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       SECTION 10: FOOTER
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .footer {
+      padding: 60px 0 30px;
+      background: var(--bg-dark);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+    .footer-brand .nav-logo { margin-bottom: 16px; }
+    .footer-tagline {
+      color: var(--text-light);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .footer-pride {
+      font-size: 0.85rem;
+      color: var(--gold-accent);
+      font-weight: 600;
+    }
+    .footer-col h4 {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 20px;
+    }
+    .footer-col ul { display: flex; flex-direction: column; gap: 12px; }
+    .footer-col a {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      transition: var(--transition);
+    }
+    .footer-col a:hover { color: var(--gold-accent); }
+    .footer-bottom {
+      padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.82rem;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       WHATSAPP FLOATING BUTTON
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 998;
+      width: 60px;
+      height: 60px;
+      background: #25D366;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+      transition: var(--transition);
+      animation: whatsappFloat 3s ease-in-out infinite;
+    }
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 28px rgba(37,211,102,0.5);
+    }
+    .whatsapp-float svg {
+      width: 30px;
+      height: 30px;
+      fill: white;
+    }
+    @keyframes whatsappFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       RESPONSIVE
+       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    @media (max-width: 768px) {
+      .nav-links, .nav-actions { display: none; }
+      .hamburger { display: flex; }
+      .mobile-menu { display: flex; }
+
+      .hero { padding: 100px 20px 60px; }
+      .hero h1 { font-size: 2.2rem; }
+      .hero-buttons { flex-direction: column; width: 100%; }
+      .hero-buttons .btn { width: 100%; justify-content: center; }
+      .hero-mockup { padding: 16px; }
+      .mockup-grid { grid-template-columns: 1fr; }
+
+      .float-badge { display: none; }
+
+      .problems-grid, .features-grid, .testimonials-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-card { padding: 32px 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+
+      .pricing-grid { grid-template-columns: 1fr; max-width: 400px; }
+      .pricing-card.featured { transform: scale(1); }
+      .pricing-card.featured:hover { transform: scale(1.02); }
+
+      .steps-grid { grid-template-columns: 1fr; gap: 48px; }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       NAVBAR
+       ═══════════════════════════════════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-icon">🏨</div>
+        OGOTEL <span>Cloud</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="#features">Fonctionnalités</a>
+        <a href="#pricing">Tarifs</a>
+        <a href="#testimonials">Témoignages</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/auth/login.html" class="btn btn-outline" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">Se connecter</a>
+        <button class="btn btn-primary" onclick="document.getElementById('form-section').scrollIntoView({behavior:'smooth'})">Demander accès</button>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#features" onclick="closeMobile()">Fonctionnalités</a>
+    <a href="#pricing" onclick="closeMobile()">Tarifs</a>
+    <a href="#testimonials" onclick="closeMobile()">Témoignages</a>
+    <a href="/auth/login.html" onclick="closeMobile()" style="font-weight:600">Se connecter</a>
+    <a href="#form-section" onclick="closeMobile()" class="btn btn-gold" style="margin-top:20px">Demander accès</a>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 2: HERO
+       ═══════════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    <div class="floating-badges">
+      <div class="float-badge">✅ 185 000 FCFA aujourd'hui</div>
+      <div class="float-badge">🛏️ 18/30 chambres occupées</div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-badge reveal">
+        🇨🇮 La 1ère solution cloud pour hôteliers ivoiriens
+      </div>
+
+      <h1 class="reveal reveal-delay-1">
+        Fini les cahiers.<br>
+        Gérez votre hôtel<br>
+        <span class="gold">comme un pro. 🏨</span>
+      </h1>
+
+      <p class="hero-subtitle reveal reveal-delay-2">
+        OGOTEL Cloud vous donne le contrôle total de votre hôtel :
+        réservations, chambres, personnel et revenus depuis
+        n'importe quel appareil en Côte d'Ivoire.
+      </p>
+
+      <div class="hero-buttons reveal reveal-delay-3">
+        <button class="btn btn-gold btn-large" onclick="document.getElementById('form-section').scrollIntoView({behavior:'smooth'})">
+          Demander mon accès →
+        </button>
+        <button class="btn btn-ghost btn-large" onclick="document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'})">
+          Voir comment ça marche
+        </button>
+      </div>
+
+      <!-- Mockup Dashboard -->
+      <div class="hero-mockup reveal reveal-delay-4">
+        <div class="mockup-titlebar">
+          <div class="mockup-dot red"></div>
+          <div class="mockup-dot yellow"></div>
+          <div class="mockup-dot green"></div>
+          <span>app.ogotel.cloud/dashboard</span>
+        </div>
+        <div class="mockup-grid">
+          <div class="mockup-card">
+            <div class="mockup-card-label">Revenus du jour</div>
+            <div class="mockup-card-value green">185 000</div>
+            <div class="mockup-card-sub">FCFA · +12% vs hier</div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-label">Chambres occupées</div>
+            <div class="mockup-card-value gold">18/30</div>
+            <div class="mockup-bar"><div class="mockup-bar-fill"></div></div>
+          </div>
+          <div class="mockup-card">
+            <div class="mockup-card-label">Arrivées aujourd'hui</div>
+            <div class="mockup-card-value">7</div>
+            <div class="mockup-card-sub">3 en attente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 3: PROBLÈMES
+       ═══════════════════════════════════════════ -->
+  <section class="problems" id="problems">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">Le constat</div>
+        <h2>Les vraies galères des hôteliers ivoiriens</h2>
+        <p>Vous perdez de l'argent chaque jour à cause de problèmes que vous pourriez résoudre en quelques clics.</p>
+      </div>
+
+      <div class="problems-grid">
+        <div class="problem-card reveal reveal-delay-1">
+          <div class="problem-icon">📋</div>
+          <h3>Gestion sur papier = chaos</h3>
+          <p>Cahiers perdus, registres illisibles, impossible de retrouver une réservation. Chaque jour est un nouveau désordre organisationnel.</p>
+        </div>
+        <div class="problem-card reveal reveal-delay-2">
+          <div class="problem-icon">💸</div>
+          <h3>Impossible de savoir si vous gagnez de l'argent</h3>
+          <p>Les paiements en espèces, les notes éparpillées... Vous ne savez jamais exactement combien votre hôtel gagne réellement chaque mois.</p>
+        </div>
+        <div class="problem-card reveal reveal-delay-3">
+          <div class="problem-icon">👁️</div>
+          <h3>Votre réceptionniste fait ce qu'il veut</h3>
+          <p>Sans contrôle ni traçabilité, les erreurs (et les disparitions) passent inaperçues. Vous n'avez aucune visibilité sur les opérations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 4: FONCTIONNALITÉS
+       ═══════════════════════════════════════════ -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">Fonctionnalités</div>
+        <h2>OGOTEL Cloud, votre hôtel sous contrôle total</h2>
+        <p>Tout ce dont vous avez besoin pour gérer votre hôtel efficacement, depuis votre smartphone ou votre ordinateur.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal reveal-delay-1">
+          <div class="feature-icon-wrap">🛏️</div>
+          <h3>Gestion chambres temps réel</h3>
+          <p>Visualisez l'état de chaque chambre en un coup d'œil. Libre, occupée, en nettoyage — tout est mis à jour instantanément.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-2">
+          <div class="feature-icon-wrap">📅</div>
+          <h3>Réservations en 3 clics</h3>
+          <p>Créez, modifiez et suivez les réservations sans effort. Pas besoin de formation, c'est aussi simple qu'envoyer un message.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-3">
+          <div class="feature-icon-wrap">💰</div>
+          <h3>Facturation automatique FCFA</h3>
+          <p>Générez des factures professionnelles en francs CFA. Suivez les paiements et relancez automatiquement les impayés.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-1">
+          <div class="feature-icon-wrap">👁️</div>
+          <h3>Surveillance du personnel</h3>
+          <p>Suivez chaque action de votre équipe : qui a enregistré quoi, quand et comment. Transparence totale.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-2">
+          <div class="feature-icon-wrap">📊</div>
+          <h3>Rapports financiers automatiques</h3>
+          <p>Recevez des rapports clairs sur vos revenus, dépenses et occupation. Prenez des décisions éclairées.</p>
+        </div>
+        <div class="feature-card reveal reveal-delay-3">
+          <div class="feature-icon-wrap">☁️</div>
+          <h3>Accessible partout (cloud)</h3>
+          <p>Gérez votre hôtel depuis Abidjan, Bouaké ou n'importe où. Tout est dans le cloud, sauvegardé et sécurisé.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 5: COMMENT ÇA MARCHE
+       ═══════════════════════════════════════════ -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">Démarrage rapide</div>
+        <h2>Actif en moins de 24 heures</h2>
+        <p>Pas besoin de formation technique. En 3 étapes simples, votre hôtel est connecté.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card reveal reveal-delay-1">
+          <div class="step-number">01</div>
+          <h3>Choisissez votre abonnement</h3>
+          <p>Sélectionnez le plan adapté à la taille de votre hôtel. Starter, Business ou Enterprise.</p>
+        </div>
+        <div class="step-card reveal reveal-delay-2">
+          <div class="step-number">02</div>
+          <h3>Recevez votre code d'activation par WhatsApp</h3>
+          <p>Notre équipe vous envoie vos identifiants et vous guide pour la première configuration.</p>
+        </div>
+        <div class="step-card reveal reveal-delay-3">
+          <div class="step-number">03</div>
+          <h3>Gérez votre hôtel comme un pro</h3>
+          <p>Connectez-vous depuis n'importe quel appareil et commencez à gérer vos réservations et vos revenus.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 6: TÉMOIGNAGES
+       ═══════════════════════════════════════════ -->
+  <section class="testimonials" id="testimonials">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">Témoignages</div>
+        <h2>Ils gèrent leur hôtel avec OGOTEL Cloud</h2>
+        <p>Des hôteliers ivoiriens qui ont transformé leur gestion quotidienne.</p>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal reveal-delay-1">
+          <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"Depuis qu'on utilise OGOTEL Cloud, je sais exactement combien on gagne chaque jour. Plus de surprise à la fin du mois. Mon réceptionniste est plus discipliné aussi."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar av-1">AK</div>
+            <div>
+              <div class="testimonial-name">Adjoua Konan</div>
+              <div class="testimonial-role">Résidence Cocody, Abidjan</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-2">
+          <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"J'avais peur que ce soit compliqué mais en 1 jour c'était en place. Mes clients sont impressionnés par la facturation automatique. C'est professionnel maintenant."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar av-2">BY</div>
+            <div>
+              <div class="testimonial-name">Bakary Yéo</div>
+              <div class="testimonial-role">Hôtel du Plateau, Bouaké</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-3">
+          <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"Je peux gérer mon hôtel depuis mon téléphone pendant mes déplacements. Les rapports financiers me permettent de prendre de meilleures décisions. Je recommande OGOTEL."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar av-3">MO</div>
+            <div>
+              <div class="testimonial-name">Mariam Ouattara</div>
+              <div class="testimonial-role">Palace Yamoussoukro</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 7: TARIFICATION
+       ═══════════════════════════════════════════ -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">Tarifs</div>
+        <h2>Un prix adapté à chaque hôtel</h2>
+        <p>Pas de frais cachés. Choisissez votre plan et commencez immédiatement.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- STARTER -->
+        <div class="pricing-card reveal reveal-delay-1">
+          <div class="pricing-plan-name">Starter</div>
+          <div class="pricing-price">25 000 <span>FCFA/mois</span></div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Jusqu'à 10 chambres
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              1 utilisateur
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Gestion réservations
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Facturation FCFA
+            </div>
+          </div>
+          <button class="pricing-btn" onclick="selectPlanAndScroll('STARTER')">Choisir Starter</button>
+        </div>
+
+        <!-- BUSINESS (mis en avant) -->
+        <div class="pricing-card featured reveal reveal-delay-2">
+          <div class="pricing-badge">🔥 Populaire</div>
+          <div class="pricing-plan-name">Business</div>
+          <div class="pricing-price">55 000 <span>FCFA/mois</span></div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Jusqu'à 30 chambres
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              3 utilisateurs
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Rapports financiers
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Surveillance personnel
+            </div>
+          </div>
+          <button class="pricing-btn" onclick="selectPlanAndScroll('BUSINESS')">Choisir Business</button>
+        </div>
+
+        <!-- ENTERPRISE -->
+        <div class="pricing-card reveal reveal-delay-3">
+          <div class="pricing-plan-name">Enterprise</div>
+          <div class="pricing-price">105 000 <span>FCFA/mois</span></div>
+          <div class="pricing-divider"></div>
+          <div class="pricing-features">
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Chambres illimitées
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              10 utilisateurs
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Support prioritaire
+            </div>
+            <div class="pricing-feature">
+              <div class="pricing-check">✓</div>
+              Formation personnalisée
+            </div>
+          </div>
+          <button class="pricing-btn" onclick="selectPlanAndScroll('ENTERPRISE')">Choisir Enterprise</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 8: FORMULAIRE
+       ═══════════════════════════════════════════ -->
+  <section class="form-section" id="form-section">
+    <div class="container">
+      <div class="form-card reveal">
+        <h2 class="form-title">Demandez votre accès OGOTEL Cloud</h2>
+        <p class="form-subtitle">Remplissez le formulaire et notre équipe vous contactera sous 24h.</p>
+
+        <form id="accessForm" novalidate>
+          <div class="form-grid">
+            <!-- Nom de l'hôtel -->
+            <div class="form-group">
+              <label class="form-label">🏨 Nom de l'hôtel *</label>
+              <input type="text" class="form-input" id="hotel_name" name="hotel_name" placeholder="Ex: Hôtel Le Prestige" required>
+              <div class="form-error" id="hotel_name-error"></div>
+            </div>
+
+            <!-- Nom complet -->
+            <div class="form-group">
+              <label class="form-label">👤 Nom complet *</label>
+              <input type="text" class="form-input" id="contact_name" name="contact_name" placeholder="Votre nom complet" required>
+              <div class="form-error" id="contact_name-error"></div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label class="form-label">📧 Email *</label>
+              <input type="email" class="form-input" id="email" name="email" placeholder="votre@email.com" required>
+              <div class="form-error" id="email-error"></div>
+            </div>
+
+            <!-- WhatsApp -->
+            <div class="form-group">
+              <label class="form-label">📱 WhatsApp *</label>
+              <input type="tel" class="form-input" id="phone" name="phone" placeholder="+225 07 XX XX XX XX" required>
+              <div class="form-hint">Vous recevrez votre code d'activation ici</div>
+              <div class="form-error" id="phone-error"></div>
+            </div>
+
+            <!-- Ville -->
+            <div class="form-group">
+              <label class="form-label">🏙️ Ville</label>
+              <select class="form-select" id="city" name="city">
+                <option value="">Sélectionnez votre ville</option>
+                <option value="Abidjan">Abidjan</option>
+                <option value="Bouaké">Bouaké</option>
+                <option value="Yamoussoukro">Yamoussoukro</option>
+                <option value="Autre">Autre</option>
+              </select>
+              <div class="form-error" id="city-error"></div>
+            </div>
+
+            <!-- Nombre de chambres -->
+            <div class="form-group">
+              <label class="form-label">🛏️ Nombre de chambres</label>
+              <select class="form-select" id="number_of_rooms" name="number_of_rooms">
+                <option value="">Sélectionnez</option>
+                <option value="1-10">1-10</option>
+                <option value="11-30">11-30</option>
+                <option value="31-50">31-50</option>
+                <option value="50+">50+</option>
+              </select>
+              <div class="form-error" id="number_of_rooms-error"></div>
+            </div>
+
+            <!-- Plan souhaité -->
+            <div class="form-group full">
+              <label class="form-label">📦 Plan souhaité</label>
+              <select class="form-select" id="selected_plan" name="selected_plan">
+                <option value="STARTER">STARTER — 25 000 FCFA/mois</option>
+                <option value="BUSINESS" selected>BUSINESS — 55 000 FCFA/mois</option>
+                <option value="ENTERPRISE">ENTERPRISE — 105 000 FCFA/mois</option>
+              </select>
+            </div>
+
+            <!-- Message -->
+            <div class="form-group full">
+              <label class="form-label">💬 Message <span class="optional">(optionnel)</span></label>
+              <textarea class="form-textarea" id="message" name="message" placeholder="Précisez vos besoins si vous le souhaitez..."></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="form-submit" id="submitBtn">
+            <span class="btn-text">Envoyer ma demande →</span>
+            <div class="spinner"></div>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 9: CTA FINAL
+       ═══════════════════════════════════════════ -->
+  <section class="final-cta">
+    <div class="container">
+      <div class="section-header reveal" style="margin-bottom: 40px;">
+        <h2>Rejoignez les hôteliers ivoiriens<br>qui gèrent comme des pros</h2>
+      </div>
+      <div class="reveal reveal-delay-1">
+        <button class="btn btn-gold btn-large" onclick="document.getElementById('form-section').scrollIntoView({behavior:'smooth'})">
+          Demander mon accès maintenant →
+        </button>
+      </div>
+      <div class="cta-contact reveal reveal-delay-2">
+        <a href="https://wa.me/2250576103277" target="_blank" rel="noopener">
+          📱 WhatsApp : +225 0576103277
+        </a>
+        <a href="mailto:tsiogou@gmail.com">
+          ✉️ tsiogou@gmail.com
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       SECTION 10: FOOTER
+       ═══════════════════════════════════════════ -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="nav-logo" style="display:inline-flex">
+            <div class="nav-logo-icon">🏨</div>
+            OGOTEL <span>Cloud</span>
+          </a>
+          <p class="footer-tagline">La solution cloud de gestion hôtelière pensée pour les hôteliers ivoiriens. Simple, fiable et abordable.</p>
+          <p class="footer-pride">Fait avec fierté en Côte d'Ivoire 🇨🇮</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Produit</h4>
+          <ul>
+            <li><a href="#features">Fonctionnalités</a></li>
+            <li><a href="#pricing">Tarifs</a></li>
+            <li><a href="#testimonials">Témoignages</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support</h4>
+          <ul>
+            <li><a href="https://wa.me/2250576103277" target="_blank" rel="noopener">WhatsApp</a></li>
+            <li><a href="mailto:tsiogou@gmail.com">Email</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="mailto:tsiogou@gmail.com">tsiogou@gmail.com</a></li>
+            <li><a href="tel:+2250576103277">+225 0576103277</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        &copy; 2025 OGOTEL Cloud. Tous droits réservés.
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════
+       WHATSAPP FLOATING BUTTON
+       ═══════════════════════════════════════════ -->
+  <a href="https://wa.me/2250576103277" target="_blank" rel="noopener" class="whatsapp-float" aria-label="Contactez-nous sur WhatsApp">
+    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M16.004 0h-.008C7.174 0 0 7.176 0 16c0 3.5 1.128 6.744 3.046 9.378L1.054 31.29l6.118-1.958C9.72 31.09 12.76 32 16.004 32 24.826 32 32 24.822 32 16S24.826 0 16.004 0zm9.334 22.594c-.39 1.1-1.932 2.014-3.17 2.28-.846.18-1.95.324-5.666-1.218-4.762-1.974-7.826-6.81-8.066-7.13-.23-.318-1.932-2.574-1.932-4.91s1.222-3.482 1.656-3.958c.39-.43 1.074-.642 1.726-.642.208 0 .394.01.562.018.434.018.652.042.938.728.36.848 1.236 3.01 1.344 3.23.11.218.218.514.07.82-.14.314-.264.454-.484.718-.22.264-.428.466-.648.748-.2.248-.426.514-.182.968.244.446 1.088 1.794 2.338 2.906 1.606 1.424 2.96 1.864 3.418 2.074.352.16.77.126 1.052-.128.352-.322.782-.85 1.22-1.37.31-.366.704-.41 1.134-.246.438.158 2.768 1.306 3.242 1.544.474.238.79.358.906.558.114.2.114 1.148-.276 2.248z"/></svg>
+  </a>
+
+
+  <!-- ═══════════════════════════════════════════
+       TOAST CONTAINER
+       ═══════════════════════════════════════════ -->
+  <div class="toast-container" id="toastContainer"></div>
+
+
+  <!-- ═══════════════════════════════════════════
+       JAVASCRIPT
+       ═══════════════════════════════════════════ -->
+  <script>
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ⚠️  SUPABASE CONFIGURATION — SÉCURITÉ
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    //
+    // IMPORTANT : SEULEMENT la clé ANON est utilisée ici.
+    // La clé ANON (publique) permet uniquement les opérations
+    // autorisées par les politiques RLS de Supabase.
+    //
+    // La SERVICE ROLE KEY (clé secrète) ne doit JAMAIS être
+    // exposée côté client/navigateur. Elle contourne RLS et
+    // donne un accès complet à la base de données.
+    // Elle doit uniquement être utilisée côté serveur.
+    //
+    // Pour ce formulaire, nous utilisons UNIQUEMENT la ANON KEY
+    // avec une politique RLS qui autorise uniquement INSERT.
+    //
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+
+    // NEVER expose this:
+    // const SERVICE_ROLE_KEY = '...'; ← JAMAIS DANS LE NAVIGATEUR !
+
+    let supabaseClient = null;
+
+    function initSupabase() {
+      try {
+        if (window.supabase && window.supabase.createClient) {
+          supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          console.log('✅ Supabase client initialized with ANON key (public only).');
+        } else {
+          console.warn('⚠️ Supabase library not loaded. Form will simulate submission.');
+        }
+      } catch (err) {
+        console.error('❌ Supabase init error:', err);
+      }
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // NAVBAR — Scroll effect
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const navbar = document.getElementById('navbar');
+    let lastScroll = 0;
+
+    function handleNavbarScroll() {
+      const scrollY = window.scrollY;
+      if (scrollY > 60) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      lastScroll = scrollY;
+    }
+    window.addEventListener('scroll', handleNavbarScroll, { passive: true });
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // HAMBURGER — Mobile menu
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+      document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+    });
+
+    function closeMobile() {
+      hamburger.classList.remove('open');
+      mobileMenu.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // REVEAL — Intersection Observer (fade-up on scroll)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const revealElements = document.querySelectorAll('.reveal');
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, {
+      threshold: 0.1,
+      rootMargin: '0px 0px -60px 0px'
+    });
+
+    revealElements.forEach(el => revealObserver.observe(el));
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // TOAST — Notification system
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function showToast(type, title, message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <div class="toast-icon">${type === 'success' ? '✅' : '❌'}</div>
+        <div class="toast-content">
+          <div class="toast-title">${title}</div>
+          <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.closest('.toast').remove()">×</button>
+        <div class="toast-progress"></div>
+      `;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('toast-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 4500);
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // FORMULAIRE — Validation & Submission
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    const form = document.getElementById('accessForm');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const fields = {
+      hotel_name: {
+        required: true,
+        validate: (v) => v.trim().length >= 2,
+        errorMsg: 'Le nom de l\'hôtel est requis (min. 2 caractères).'
+      },
+      contact_name: {
+        required: true,
+        validate: (v) => v.trim().length >= 2,
+        errorMsg: 'Votre nom complet est requis (min. 2 caractères).'
+      },
+      email: {
+        required: true,
+        validate: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+        errorMsg: 'Veuillez entrer un email valide.'
+      },
+      phone: {
+        required: true,
+        validate: (v) => v.replace(/\s/g, '').length >= 10,
+        errorMsg: 'Veuillez entrer un numéro WhatsApp valide.'
+      }
+    };
+
+    // Real-time validation on blur
+    Object.keys(fields).forEach(fieldId => {
+      const input = document.getElementById(fieldId);
+      if (!input) return;
+
+      input.addEventListener('blur', () => validateField(fieldId));
+      input.addEventListener('input', () => {
+        if (input.classList.contains('error')) {
+          validateField(fieldId);
+        }
+      });
+    });
+
+    function validateField(fieldId) {
+      const field = fields[fieldId];
+      const input = document.getElementById(fieldId);
+      const errorEl = document.getElementById(`${fieldId}-error`);
+      const value = input.value;
+
+      if (field.required && !value.trim()) {
+        input.classList.add('error');
+        if (errorEl) errorEl.textContent = 'Ce champ est requis.';
+        return false;
+      }
+
+      if (value.trim() && !field.validate(value)) {
+        input.classList.add('error');
+        if (errorEl) errorEl.textContent = field.errorMsg;
+        return false;
+      }
+
+      input.classList.remove('error');
+      if (errorEl) errorEl.textContent = '';
+      return true;
+    }
+
+    function validateAllFields() {
+      let isValid = true;
+      Object.keys(fields).forEach(fieldId => {
+        if (!validateField(fieldId)) isValid = false;
+      });
+      return isValid;
+    }
+
+    // Submit handler
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!validateAllFields()) {
+        showToast('error', 'Formulaire incomplet', 'Veuillez corriger les erreurs ci-dessus.');
+        return;
+      }
+
+      // Loading state
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+
+      const formData = {
+        hotel_name: document.getElementById('hotel_name').value.trim(),
+        contact_name: document.getElementById('contact_name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        city: document.getElementById('city').value || null,
+        number_of_rooms: document.getElementById('number_of_rooms').value || null,
+        selected_plan: document.getElementById('selected_plan').value,
+        message: document.getElementById('message').value.trim() || null
+      };
+
+      try {
+        if (supabaseClient) {
+          const { data, error } = await supabaseClient
+            .from('landing_requests')
+            .insert([formData]);
+
+          if (error) throw error;
+
+          showToast(
+            'success',
+            'Demande envoyée !',
+            '✅ Votre demande a été envoyée avec succès.<br>Notre équipe vous contactera sur WhatsApp sous 24h.'
+          );
+
+          // Reset form
+          form.reset();
+          document.getElementById('selected_plan').value = 'BUSINESS';
+
+        } else {
+          // Simulate submission if Supabase is not loaded
+          console.log('📝 Form data (simulated):', formData);
+          showToast(
+            'success',
+            'Demande envoyée !',
+            '✅ Votre demande a été envoyée avec succès.<br>Notre équipe vous contactera sur WhatsApp sous 24h.'
+          );
+          form.reset();
+          document.getElementById('selected_plan').value = 'BUSINESS';
+        }
+
+      } catch (err) {
+        console.error('Form submission error:', err);
+        showToast(
+          'error',
+          'Erreur',
+          '❌ Une erreur est survenue. Veuillez réessayer.'
+        );
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+      }
+    });
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // PLAN SELECTOR — Scroll to form with plan pre-selected
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function selectPlanAndScroll(plan) {
+      document.getElementById('selected_plan').value = plan;
+      document.getElementById('form-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // INIT
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initSupabase();
+      handleNavbarScroll();
+    });
+  </script>
+
+</body>
+</html>
