@@ -18,22 +18,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Supabase v2 — pinned version for reliability -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
-  <script>
-    // Fallback: if CDN blocked, load from unpkg
-    window.addEventListener('error', function(e) {
-      if (e.target && e.target.tagName === 'SCRIPT') {
-        var s = document.createElement('script');
-        s.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-        document.head.appendChild(s);
-      }
-    }, true);
-  </script>
-
-  <!-- Lucide Icons -->
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
-
   <style>
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
        CSS VARIABLES & RESET
@@ -1104,42 +1088,23 @@
 
 
   <!-- ═══════════════════════════════════════════════
-       JAVASCRIPT
+       JAVASCRIPT — fetch() based (no CDN dependency)
        ═══════════════════════════════════════════════ -->
   <script>
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ⚠️  SUPABASE CONFIGURATION — SÉCURITÉ
+    // ⚠️  SUPABASE CONFIGURATION — REST API (no SDK)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    const SUPABASE_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
+    const SB_URL = 'https://pblizpjhsvctsrzzculc.supabase.co';
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBibGl6cGpoc3ZjdHNyenpjdWxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDc0MDIsImV4cCI6MjA5NTAyMzQwMn0.O-e_FLsNr-6dUcJOuGiQKLibvzcrXC_Vid7m9eK4b9o';
 
-    let supabase = null;
-    let supabaseReady = false;
-
-    function showBanner(msg, color) {
-      const b = document.getElementById('debugBanner');
-      if (b) { b.textContent = msg; b.style.display = 'block'; b.style.background = color || '#FEF3C7'; b.style.color = '#92400E'; }
-    }
-
-    function initSupabase() {
-      try {
-        console.log('[DEBUG] initSupabase called. window.supabase =', !!window.supabase);
-        if (window.supabase && window.supabase.createClient) {
-          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-          supabaseReady = true;
-          console.log('[DEBUG] ✅ Supabase client initialized.');
-          showBanner('', ''); // hide banner on success
-        } else {
-          console.warn('[DEBUG] ⚠️ Supabase not loaded yet.');
-          showBanner('⚠️ Chargement de Supabase... Réessayez dans 5 secondes.');
-          // Retry after 3 seconds
-          setTimeout(initSupabase, 3000);
-        }
-      } catch (e) {
-        console.error('[DEBUG] ❌ Supabase init error:', e);
-        showBanner('❌ Erreur Supabase: ' + e.message, '#FEE2E2');
-      }
+    function sbHeaders(extra) {
+      return Object.assign({
+        'apikey': SB_KEY,
+        'Authorization': 'Bearer ' + SB_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }, extra || {});
     }
 
 
@@ -1284,11 +1249,10 @@
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 1 — Validate Code
+    // STEP 1 — Validate Code (fetch-based)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     async function validateCode() {
-      console.log('[DEBUG] validateCode() called');
       const codeInput = document.getElementById('activationCode');
       const code = codeInput.value.trim().toUpperCase();
       const codeFieldError = document.getElementById('codeFieldError');
@@ -1318,79 +1282,70 @@
 
       btn.disabled = true;
       btn.classList.add('loading');
-      console.log('[DEBUG] Button loading state set. Calling Supabase RPC...');
 
       try {
-        if (!supabase) {
-          console.error('[DEBUG] supabase is null! Attempting re-init...');
-          initSupabase();
-          // Wait a moment then retry
-          await new Promise(r => setTimeout(r, 2000));
-          if (!supabase) {
-            showBanner('❌ Supabase ne se charge pas. Vérifiez votre connexion internet.', '#FEE2E2');
-            showErr('codeErrorBox', 'codeErrorText',
-              'Supabase ne se charge pas.<br>Vérifiez votre connexion internet et rechargez la page (F5).');
-            return;
-          }
-        }
+        let codeData = null;
 
         // Try RPC first
-        console.log('[DEBUG] Calling validate_activation_code RPC with code:', code);
-        let codeData, codeErr;
-
         try {
-          const rpcResult = await supabase.rpc('validate_activation_code', { p_code: code });
-          codeData = rpcResult.data;
-          codeErr = rpcResult.error;
-          console.log('[DEBUG] RPC result:', { codeData, codeErr });
+          const rpcResp = await fetch(SB_URL + '/rest/v1/rpc/validate_activation_code', {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({ p_code: code })
+          });
+          if (rpcResp.ok) {
+            const rpcResult = await rpcResp.json();
+            if (rpcResult && rpcResult.valid) {
+              codeData = rpcResult;
+            }
+          }
         } catch (rpcErr) {
-          console.warn('[DEBUG] RPC failed, trying direct query fallback:', rpcErr);
-          codeErr = rpcErr;
+          console.warn('RPC call failed, trying direct query fallback:', rpcErr);
         }
 
-        // Fallback: if RPC fails, try direct table query
-        if (codeErr || !codeData || !codeData.valid) {
-          console.log('[DEBUG] RPC failed or invalid, trying direct query...');
+        // Fallback: direct table query
+        if (!codeData) {
           try {
-            const directResult = await supabase
-              .from('activation_codes')
-              .select('code, plan, max_rooms, is_used, expires_at')
-              .eq('code', code)
-              .single();
+            const queryResp = await fetch(
+              SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(code) + '&select=code,plan,max_rooms,is_used,expires_at',
+              { headers: sbHeaders() }
+            );
 
-            console.log('[DEBUG] Direct query result:', directResult);
-
-            if (directResult.error) {
-              throw new Error(directResult.error.message);
+            if (!queryResp.ok) {
+              throw new Error('Erreur serveur (' + queryResp.status + ')');
             }
 
-            if (!directResult.data) {
+            const rows = await queryResp.json();
+
+            if (!rows || rows.length === 0) {
               showErr('codeErrorBox', 'codeErrorText',
                 'Code non trouvé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
               return;
             }
 
-            if (directResult.data.is_used) {
+            const row = rows[0];
+
+            if (row.is_used) {
               showErr('codeErrorBox', 'codeErrorText',
                 'Code déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
               return;
             }
 
-            if (directResult.data.expires_at && new Date(directResult.data.expires_at) < new Date()) {
+            if (row.expires_at && new Date(row.expires_at) < new Date()) {
               showErr('codeErrorBox', 'codeErrorText',
                 'Code expiré.<br>Contactez-nous : <strong>+225 0576103277</strong>');
               return;
             }
 
-            // Use direct data
             codeData = {
               valid: true,
-              plan_name: directResult.data.plan || 'basic',
-              max_rooms: directResult.data.max_rooms || 20,
-              max_users: directResult.data.plan === 'premium' ? 5 : directResult.data.plan === 'basic' ? 2 : 1
+              plan_name: row.plan || 'basic',
+              max_rooms: row.max_rooms || 20,
+              max_users: row.plan === 'premium' ? 5 : row.plan === 'basic' ? 2 : 1
             };
           } catch (fallbackErr) {
-            console.error('[DEBUG] Fallback also failed:', fallbackErr);
+            console.error('Direct query also failed:', fallbackErr);
+            alert('Erreur de connexion à Supabase.\nVérifiez votre connexion internet et rechargez la page.');
             showErr('codeErrorBox', 'codeErrorText',
               'Erreur de connexion : ' + esc(fallbackErr.message) + '<br>Vérifiez votre connexion et réessayez.');
             return;
@@ -1433,13 +1388,13 @@
         setTimeout(() => goToStep(2), 1200);
 
       } catch (err) {
-        console.error('[DEBUG] Code validation error:', err);
+        console.error('Code validation error:', err);
+        alert('Erreur lors de la validation du code.\nDétails : ' + err.message);
         showErr('codeErrorBox', 'codeErrorText',
           'Erreur : ' + esc(err.message) + '<br>Vérifiez votre connexion et réessayez.');
       } finally {
         btn.disabled = false;
         btn.classList.remove('loading');
-        console.log('[DEBUG] Button restored.');
       }
     }
 
@@ -1537,7 +1492,7 @@
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // REGISTRATION — Full flow
+    // REGISTRATION — Full flow (fetch-based)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     function getEndDate() {
@@ -1556,8 +1511,6 @@
       hideErr('adminErrorBox');
 
       try {
-        if (!supabase) throw new Error('Supabase non initialisé.');
-
         // SECURITY: Re-validate activation code before creating hotel
         const storedCode = sessionStorage.getItem('ogotel_code');
         if (!storedCode) {
@@ -1567,33 +1520,44 @@
         }
 
         // Validate code — try RPC first, then direct query
-        let freshValidation, freshErr;
+        let freshValidation = null;
         try {
-          const rpcRes = await supabase.rpc('validate_activation_code', { p_code: storedCode });
-          freshValidation = rpcRes.data;
-          freshErr = rpcRes.error;
+          const rpcResp = await fetch(SB_URL + '/rest/v1/rpc/validate_activation_code', {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({ p_code: storedCode })
+          });
+          if (rpcResp.ok) {
+            const rpcResult = await rpcResp.json();
+            if (rpcResult && rpcResult.valid) {
+              freshValidation = rpcResult;
+            }
+          }
         } catch (e) {
-          freshErr = e;
+          console.warn('RPC re-validation failed, trying direct query:', e);
         }
 
-        if (freshErr || !freshValidation || !freshValidation.valid) {
+        if (!freshValidation) {
           // Fallback to direct query
           try {
-            const directRes = await supabase
-              .from('activation_codes')
-              .select('code, plan, max_rooms, is_used')
-              .eq('code', storedCode)
-              .single();
+            const directResp = await fetch(
+              SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode) + '&select=code,plan,max_rooms,is_used',
+              { headers: sbHeaders() }
+            );
 
-            if (directRes.error || !directRes.data || directRes.data.is_used) {
+            if (!directResp.ok) throw new Error('Erreur serveur (' + directResp.status + ')');
+
+            const rows = await directResp.json();
+            if (!rows || rows.length === 0 || rows[0].is_used) {
               showErr('adminErrorBox', 'adminErrorText',
                 'Code d\'activation invalide ou déjà utilisé. Veuillez recommencer.');
               return;
             }
+
             freshValidation = {
               valid: true,
-              plan_name: directRes.data.plan || 'basic',
-              max_rooms: directRes.data.max_rooms || 20,
+              plan_name: rows[0].plan || 'basic',
+              max_rooms: rows[0].max_rooms || 20,
               plan_id: null
             };
           } catch (fallbackErr) {
@@ -1603,23 +1567,25 @@
           }
         }
 
-        // 1. Auth signup
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-              role: 'hotel_admin'
-            }
-          }
+        // 1. Auth signup via fetch
+        const authResp = await fetch(SB_URL + '/auth/v1/signup', {
+          method: 'POST',
+          headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            data: { full_name: formData.fullName, role: 'hotel_admin' }
+          })
         });
 
-        if (authError) {
-          if (authError.message.includes('already registered')) {
+        const authData = await authResp.json();
+
+        if (!authResp.ok) {
+          const errMsg = (authData && (authData.msg || authData.error_description || authData.message)) || 'Erreur inconnue';
+          if (errMsg.includes('already registered') || errMsg.includes('already been registered') || authResp.status === 422) {
             showErr('adminErrorBox', 'adminErrorText', 'Cet email est déjà utilisé.<br>Connectez-vous ou utilisez un autre email.');
           } else {
-            showErr('adminErrorBox', 'adminErrorText', `Erreur : ${esc(authError.message)}`);
+            showErr('adminErrorBox', 'adminErrorText', 'Erreur : ' + esc(errMsg));
           }
           return;
         }
@@ -1629,36 +1595,52 @@
           return;
         }
 
-        // 2. Create hotel — use SERVER-VALIDATED values from freshValidation, NOT sessionStorage
-        const { data: hotelData, error: hotelError } = await supabase
-          .from('hotels')
-          .insert({
-            name: sessionStorage.getItem('hotel_name'),
-            city: sessionStorage.getItem('hotel_city'),
-            address: sessionStorage.getItem('hotel_address') || null,
-            phone: sessionStorage.getItem('hotel_phone'),
-            email: sessionStorage.getItem('hotel_email') || null,
-            plan_name: freshValidation.plan_name || 'Plan',
-            plan_id: freshValidation.plan_id || null,
-            activation_code: storedCode,
-            subscription_start: new Date().toISOString().split('T')[0],
-            subscription_end: getEndDate()
-          })
-          .select()
-          .single();
+        const userId = authData.user.id;
 
-        if (hotelError) {
-          console.warn('Hotel creation warning:', hotelError);
+        // 2. Create hotel — use SERVER-VALIDATED values from freshValidation, NOT sessionStorage
+        let hotelId = null;
+        try {
+          const hotelResp = await fetch(SB_URL + '/rest/v1/hotels', {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({
+              name: sessionStorage.getItem('hotel_name'),
+              city: sessionStorage.getItem('hotel_city'),
+              address: sessionStorage.getItem('hotel_address') || null,
+              phone: sessionStorage.getItem('hotel_phone'),
+              email: sessionStorage.getItem('hotel_email') || null,
+              plan_name: freshValidation.plan_name || 'Plan',
+              plan_id: freshValidation.plan_id || null,
+              activation_code: storedCode,
+              subscription_start: new Date().toISOString().split('T')[0],
+              subscription_end: getEndDate()
+            })
+          });
+
+          if (hotelResp.ok) {
+            const hotelRows = await hotelResp.json();
+            if (hotelRows && hotelRows.length > 0) {
+              hotelId = hotelRows[0].id;
+            }
+          } else {
+            console.warn('Hotel creation warning:', hotelResp.status, await hotelResp.text());
+          }
+        } catch (hotelErr) {
+          console.warn('Hotel creation warning:', hotelErr);
         }
 
         // 3. Create profile
         try {
-          await supabase.from('user_profiles').insert({
-            id: authData.user.id,
-            hotel_id: hotelData?.id || null,
-            full_name: formData.fullName,
-            phone: formData.phone,
-            role: 'hotel_admin'
+          await fetch(SB_URL + '/rest/v1/user_profiles', {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({
+              id: userId,
+              hotel_id: hotelId,
+              full_name: formData.fullName,
+              phone: formData.phone,
+              role: 'hotel_admin'
+            })
           });
         } catch (profileErr) {
           console.warn('Profile creation warning:', profileErr);
@@ -1666,17 +1648,26 @@
 
         // 4. Mark code as used — try RPC first, fallback to direct update
         try {
-          await supabase.rpc('use_activation_code', { p_code: storedCode });
+          await fetch(SB_URL + '/rest/v1/rpc/use_activation_code', {
+            method: 'POST',
+            headers: sbHeaders(),
+            body: JSON.stringify({ p_code: storedCode })
+          });
         } catch (rpcErr) {
           console.warn('RPC use_activation_code failed, trying direct update:', rpcErr);
-          try {
-            await supabase
-              .from('activation_codes')
-              .update({ is_used: true, used_by: authData.user.id })
-              .eq('code', storedCode);
-          } catch (directErr) {
-            console.warn('Direct code update also failed:', directErr);
-          }
+        }
+        // Always also try direct PATCH as safety net
+        try {
+          await fetch(
+            SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode),
+            {
+              method: 'PATCH',
+              headers: sbHeaders(),
+              body: JSON.stringify({ is_used: true, used_by: userId })
+            }
+          );
+        } catch (directErr) {
+          console.warn('Direct code update failed:', directErr);
         }
 
         // 5. Show success
@@ -1684,6 +1675,7 @@
 
       } catch (err) {
         console.error('Registration error:', err);
+        alert('Erreur lors de l\'inscription.\nDétails : ' + err.message);
         showErr('adminErrorBox', 'adminErrorText',
           'Une erreur est survenue.<br>Vérifiez votre connexion et réessayez.');
       } finally {
@@ -1718,7 +1710,6 @@
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     document.addEventListener('DOMContentLoaded', () => {
-      initSupabase();
       setupToggle('pwToggle1', 'adminPassword', 'eye1', 'eyeOff1');
       setupToggle('pwToggle2', 'adminPasswordConfirm', 'eye2', 'eyeOff2');
 
