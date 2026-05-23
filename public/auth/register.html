@@ -18,11 +18,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-  <!-- Supabase v2 — local copy (no CDN dependency) -->
-  <script src="supabase.min.js"></script>
+  <!-- Supabase v2 — pinned version for reliability -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+  <script>
+    // Fallback: if CDN blocked, load from unpkg
+    window.addEventListener('error', function(e) {
+      if (e.target && e.target.tagName === 'SCRIPT') {
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+        document.head.appendChild(s);
+      }
+    }, true);
+  </script>
 
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.1/dist/umd/lucide.min.js"></script>
 
   <style>
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1107,6 +1117,11 @@
     let supabase = null;
     let supabaseReady = false;
 
+    function showBanner(msg, color) {
+      const b = document.getElementById('debugBanner');
+      if (b) { b.textContent = msg; b.style.display = 'block'; b.style.background = color || '#FEF3C7'; b.style.color = '#92400E'; }
+    }
+
     function initSupabase() {
       try {
         console.log('[DEBUG] initSupabase called. window.supabase =', !!window.supabase);
@@ -1114,22 +1129,16 @@
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
           supabaseReady = true;
           console.log('[DEBUG] ✅ Supabase client initialized.');
+          showBanner('', ''); // hide banner on success
         } else {
-          console.warn('[DEBUG] ⚠️ window.supabase or createClient not found.');
-          // Show visible warning
-          const banner = document.getElementById('debugBanner');
-          if (banner) {
-            banner.textContent = '⚠️ Chargement de Supabase en cours...';
-            banner.style.display = 'block';
-          }
+          console.warn('[DEBUG] ⚠️ Supabase not loaded yet.');
+          showBanner('⚠️ Chargement de Supabase... Réessayez dans 5 secondes.');
+          // Retry after 3 seconds
+          setTimeout(initSupabase, 3000);
         }
       } catch (e) {
         console.error('[DEBUG] ❌ Supabase init error:', e);
-        const banner = document.getElementById('debugBanner');
-        if (banner) {
-          banner.textContent = '❌ Erreur initialisation Supabase: ' + e.message;
-          banner.style.display = 'block';
-        }
+        showBanner('❌ Erreur Supabase: ' + e.message, '#FEE2E2');
       }
     }
 
@@ -1315,7 +1324,14 @@
         if (!supabase) {
           console.error('[DEBUG] supabase is null! Attempting re-init...');
           initSupabase();
-          if (!supabase) throw new Error('Supabase non initialisé. Rechargez la page.');
+          // Wait a moment then retry
+          await new Promise(r => setTimeout(r, 2000));
+          if (!supabase) {
+            showBanner('❌ Supabase ne se charge pas. Vérifiez votre connexion internet.', '#FEE2E2');
+            showErr('codeErrorBox', 'codeErrorText',
+              'Supabase ne se charge pas.<br>Vérifiez votre connexion internet et rechargez la page (F5).');
+            return;
+          }
         }
 
         // Try RPC first
