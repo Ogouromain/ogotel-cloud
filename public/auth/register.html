@@ -837,7 +837,6 @@
         </div>
       </div>
 
-      <div id="debugBanner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:#FEF3C7; color:#92400E; padding:8px 16px; font-size:13px; text-align:center; font-family:sans-serif; border-bottom:2px solid #F59E0B;"></div>
       <div class="steps-container">
 
         <!-- ═══════════════════════════════════
@@ -870,9 +869,9 @@
                   </span>
                   <input
                     type="text"
+                    id="activation-code"
                     class="field-input code-input"
-                    id="activationCode"
-                    placeholder="OGOT-2025-XXXXXX"
+                    placeholder="OGOTEL-2025-XXXXXX"
                     maxlength="20"
                     autocomplete="off"
                     spellcheck="false"
@@ -881,7 +880,7 @@
                 <div class="field-error" id="codeFieldError"></div>
               </div>
 
-              <button type="button" class="btn btn-primary" id="btnValidateCode" onclick="validateCode()" style="height:56px;">
+              <button type="button" id="verify-code-btn" class="btn btn-primary" onclick="validateActivationCode()" style="height:56px;">
                 <span class="btn-label">
                   Vérifier mon code
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -946,11 +945,11 @@
             </div>
 
             <div class="btn-row" style="margin-top:22px;">
-              <button type="button" class="btn btn-outline" id="btnBackStep1">
+              <button type="button" class="btn btn-outline" id="btn-back-step1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 Retour
               </button>
-              <button type="button" class="btn btn-primary" id="btnNextStep2" style="height:52px;">
+              <button type="button" class="btn btn-primary" id="btn-next-step2" style="height:52px;">
                 <span class="btn-label">
                   Continuer
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -1049,11 +1048,11 @@
             </div>
 
             <div class="btn-row" style="margin-top:22px;">
-              <button type="button" class="btn btn-outline" id="btnBackStep2">
+              <button type="button" class="btn btn-outline" id="btn-back-step2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 Retour
               </button>
-              <button type="button" class="btn btn-primary" id="btnRegister" style="height:56px; flex:1.5;">
+              <button type="button" class="btn btn-primary" id="btn-register" style="height:56px; flex:1.5;">
                 <span class="btn-label">
                   Créer mon compte et activer OGOTEL Cloud
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -1088,7 +1087,7 @@
 
 
   <!-- ═══════════════════════════════════════════════
-       JAVASCRIPT — fetch() based (no CDN dependency)
+       JAVASCRIPT — fetch() based (ZERO CDN dependencies)
        ═══════════════════════════════════════════════ -->
   <script>
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1118,11 +1117,6 @@
       return div.innerHTML;
     }
 
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // SECURITY: Rate limiting for code validation
-    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    let codeValidationAttempts = 0;
-    const MAX_CODE_ATTEMPTS = 5;
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // STATE
@@ -1156,19 +1150,19 @@
       });
 
       // Progress
-      document.getElementById('progressText').textContent = `Étape ${step} sur 3`;
+      document.getElementById('progressText').textContent = '\u00c9tape ' + step + ' sur 3';
       document.getElementById('progressLabel').textContent = progressLabels[step - 1];
-      document.getElementById('progressFill').style.width = `${(step / 3) * 100}%`;
+      document.getElementById('progressFill').style.width = ((step / 3) * 100) + '%';
 
       // Dots
       for (let i = 1; i <= 3; i++) {
-        const dot = document.getElementById(`dot${i}`);
+        const dot = document.getElementById('dot' + i);
         dot.classList.remove('active', 'done');
         if (i === step) dot.classList.add('active');
         if (i < step) dot.classList.add('done');
       }
       for (let i = 1; i <= 2; i++) {
-        const line = document.getElementById(`line${i}`);
+        const line = document.getElementById('line' + i);
         line.classList.toggle('done', i < step);
       }
 
@@ -1215,7 +1209,7 @@
       const classes = ['', 'weak', 'medium', 'strong', 'strong'];
 
       for (let i = 1; i <= 4; i++) {
-        const seg = document.getElementById(`seg${i}`);
+        const seg = document.getElementById('seg' + i);
         seg.className = 'strength-segment';
         if (i <= score) seg.classList.add(classes[score]);
       }
@@ -1249,152 +1243,176 @@
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // STEP 1 — Validate Code (fetch-based)
+    // STEP 1 — showPlanConfirmation
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-    async function validateCode() {
-      const codeInput = document.getElementById('activationCode');
-      const code = codeInput.value.trim().toUpperCase();
-      const codeFieldError = document.getElementById('codeFieldError');
-      const btn = document.getElementById('btnValidateCode');
+    function showPlanConfirmation(planName, limits) {
+      const colors = { 'STARTER': '#1565C0', 'BUSINESS': '#1B5E20', 'ENTERPRISE': '#E65100' };
+      const color = colors[planName] || '#1B5E20';
 
-      hideErr('codeErrorBox');
-      clearFieldErr(codeInput, codeFieldError);
+      // Use the existing HTML element with id="codeSuccess" and "codeSuccessDetails"
+      const detailsEl = document.getElementById('codeSuccessDetails');
+      const successEl = document.getElementById('codeSuccess');
+      if (detailsEl && successEl) {
+        detailsEl.innerHTML = '\
+          <div class="code-success-item"><span>\uD83D\uDCE6</span> <strong>' + esc(planName) + '</strong> activ\u00e9</div>\
+          <div class="code-success-item"><span>\uD83D\uDECF\uFE0F</span> Jusqu\'\u00e0 <strong>' + limits.max_rooms + ' chambres</strong></div>\
+          <div class="code-success-item"><span>\uD83D\uDC65</span> <strong>' + limits.max_users + ' utilisateur(s)</strong></div>\
+          <div class="code-success-item"><span>\uD83D\uDCB0</span> <strong>' + limits.price.toLocaleString('fr-FR') + ' FCFA/mois</strong></div>';
+        successEl.classList.add('visible');
+      }
+    }
 
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 1 — showStepError / hideStepError
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    function showStepError(message) {
+      // Use existing HTML elements with id="codeErrorBox" and "codeErrorText"
+      const box = document.getElementById('codeErrorBox');
+      const text = document.getElementById('codeErrorText');
+      if (box && text) {
+        text.innerHTML = message;
+        box.classList.add('visible');
+      }
+      // Also show alert for critical errors
+      if (message.includes('Erreur') || message.includes('\u274C')) {
+        // Don't alert for every error, just log
+      }
+    }
+
+    function showStepSuccess(message) {
+      console.log('\u2705 Success:', message);
+    }
+
+    function hideStepError() {
+      const box = document.getElementById('codeErrorBox');
+      if (box) box.classList.remove('visible');
+      const successEl = document.getElementById('codeSuccess');
+      if (successEl) successEl.classList.remove('visible');
+    }
+
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // STEP 1 — VALIDATE ACTIVATION CODE (fetch-based)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    async function validateActivationCode() {
+      // 1. R\u00e9cup\u00e9rer la valeur du champ
+      const codeInput = document.getElementById('activation-code');
+      if (!codeInput) {
+        console.error('\u274C Element activation-code introuvable !');
+        alert('ERREUR: Element activation-code introuvable !');
+        return;
+      }
+
+      const rawCode = codeInput.value;
+      const code = rawCode.trim().toUpperCase();
+      console.log('Code saisi (brut):', rawCode);
+      console.log('Code nettoy\u00e9:', code);
+
+      // 2. V\u00e9rifier que le champ n'est pas vide
       if (!code) {
-        showFieldErr(codeInput, codeFieldError, 'Veuillez entrer votre code d\'activation.');
-        return;
-      }
-      if (code.length < 5) {
-        showFieldErr(codeInput, codeFieldError, 'Le code est trop court.');
+        showStepError('Veuillez entrer votre code d\'activation.');
         return;
       }
 
-      // Rate limiting check
-      codeValidationAttempts++;
-      if (codeValidationAttempts > MAX_CODE_ATTEMPTS) {
+      // 3. Afficher loading sur le bouton
+      const btn = document.getElementById('verify-code-btn');
+      const originalHTML = btn ? btn.innerHTML : '';
+      if (btn) {
         btn.disabled = true;
-        btn.textContent = 'Trop de tentatives. Réessayez plus tard.';
-        showErr('codeErrorBox', 'codeErrorText',
-          'Trop de tentatives de validation.<br>Attendez quelques minutes ou contactez-nous : <strong>+225 0576103277</strong>');
-        return;
+        btn.classList.add('loading');
+        console.log('\uD83D\uDD04 Bouton en loading...');
       }
 
-      btn.disabled = true;
-      btn.classList.add('loading');
+      // 4. Cacher le message d'erreur pr\u00e9c\u00e9dent
+      hideStepError();
 
       try {
-        let codeData = null;
+        console.log('\uD83D\uDD0D Recherche du code dans Supabase...');
 
-        // Try RPC first
-        try {
-          const rpcResp = await fetch(SB_URL + '/rest/v1/rpc/validate_activation_code', {
-            method: 'POST',
-            headers: sbHeaders(),
-            body: JSON.stringify({ p_code: code })
-          });
-          if (rpcResp.ok) {
-            const rpcResult = await rpcResp.json();
-            if (rpcResult && rpcResult.valid) {
-              codeData = rpcResult;
-            }
-          }
-        } catch (rpcErr) {
-          console.warn('RPC call failed, trying direct query fallback:', rpcErr);
+        // 5. Requ\u00eate Supabase via fetch() - PAS de filtre is_used d'abord
+        const url = SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(code) + '&select=*';
+        console.log('\uD83D\uDCE1 URL requ\u00eate:', url);
+
+        const resp = await fetch(url, { headers: sbHeaders() });
+        console.log('\uD83D\uDCE1 Status HTTP:', resp.status);
+
+        const data = await resp.json();
+        console.log('\uD83D\uDCE6 R\u00e9ponse Supabase:', JSON.stringify(data, null, 2));
+
+        // 6. G\u00e9rer l'erreur HTTP
+        if (!resp.ok) {
+          console.error('\u274C Erreur HTTP:', resp.status, data);
+          showStepError('Erreur de connexion (HTTP ' + resp.status + '). V\u00e9rifiez votre connexion internet.');
+          if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+          return;
         }
 
-        // Fallback: direct table query
-        if (!codeData) {
-          try {
-            const queryResp = await fetch(
-              SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(code) + '&select=code,plan,max_rooms,is_used,expires_at',
-              { headers: sbHeaders() }
-            );
+        // 7. Code introuvable
+        if (!data || data.length === 0) {
+          console.log('\u274C Code non trouv\u00e9 dans la base');
+          showStepError('\u274C Code invalide : "' + code + '" n\'existe pas. V\u00e9rifiez le code re\u00e7u sur WhatsApp. Besoin d\'aide ? +225 0576103277');
+          if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+          return;
+        }
 
-            if (!queryResp.ok) {
-              throw new Error('Erreur serveur (' + queryResp.status + ')');
-            }
+        const codeData = data[0];
+        console.log('\u2705 Code trouv\u00e9:', JSON.stringify(codeData, null, 2));
 
-            const rows = await queryResp.json();
+        // 8. Code d\u00e9j\u00e0 utilis\u00e9
+        if (codeData.is_used === true) {
+          console.log('\u274C Code d\u00e9j\u00e0 utilis\u00e9');
+          showStepError('\u274C Ce code a d\u00e9j\u00e0 \u00e9t\u00e9 utilis\u00e9. Contactez-nous pour obtenir un nouveau code : +225 0576103277');
+          if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+          return;
+        }
 
-            if (!rows || rows.length === 0) {
-              showErr('codeErrorBox', 'codeErrorText',
-                'Code non trouvé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
-              return;
-            }
-
-            const row = rows[0];
-
-            if (row.is_used) {
-              showErr('codeErrorBox', 'codeErrorText',
-                'Code déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
-              return;
-            }
-
-            if (row.expires_at && new Date(row.expires_at) < new Date()) {
-              showErr('codeErrorBox', 'codeErrorText',
-                'Code expiré.<br>Contactez-nous : <strong>+225 0576103277</strong>');
-              return;
-            }
-
-            codeData = {
-              valid: true,
-              plan_name: row.plan || 'basic',
-              max_rooms: row.max_rooms || 20,
-              max_users: row.plan === 'premium' ? 5 : row.plan === 'basic' ? 2 : 1
-            };
-          } catch (fallbackErr) {
-            console.error('Direct query also failed:', fallbackErr);
-            alert('Erreur de connexion à Supabase.\nVérifiez votre connexion internet et rechargez la page.');
-            showErr('codeErrorBox', 'codeErrorText',
-              'Erreur de connexion : ' + esc(fallbackErr.message) + '<br>Vérifiez votre connexion et réessayez.');
+        // 9. Code expir\u00e9
+        if (codeData.expires_at) {
+          const expDate = new Date(codeData.expires_at);
+          const now = new Date();
+          console.log('\uD83D\uDCC5 Date expiration:', expDate, '| Date actuelle:', now);
+          if (expDate < now) {
+            console.log('\u274C Code expir\u00e9');
+            showStepError('\u274C Ce code a expir\u00e9 le ' + expDate.toLocaleDateString('fr-FR') + '. Contactez-nous : +225 0576103277');
+            if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
             return;
           }
         }
 
-        if (!codeData || !codeData.valid) {
-          showErr('codeErrorBox', 'codeErrorText',
-            'Code invalide ou déjà utilisé.<br>Contactez-nous : <strong>+225 0576103277</strong>');
-          return;
-        }
+        // 10. \u2705 CODE VALIDE !
+        console.log('\u2705\u2705\u2705 CODE VALIDE ! Plan:', codeData.plan_name);
 
-        // Store code info
-        sessionStorage.setItem('ogotel_code', code);
-        sessionStorage.setItem('ogotel_plan_display', JSON.stringify({
-          plan_name: codeData.plan_name || 'Plan',
-          max_rooms: codeData.max_rooms || 10,
-          max_users: codeData.max_users || 1
-        }));
+        // 11. Sauvegarder dans sessionStorage
+        sessionStorage.setItem('activation_code', codeData.code);
+        sessionStorage.setItem('plan_name', codeData.plan_name || 'STARTER');
+        sessionStorage.setItem('plan_id', codeData.plan_id || '');
+        sessionStorage.setItem('code_id', codeData.id);
 
-        // Show success
-        const planName = esc(codeData.plan_name || 'Plan');
-        const maxRooms = esc(codeData.max_rooms || 10);
-        const maxUsers = esc(codeData.max_users || 1);
+        const planLimits = {
+          'STARTER': { max_rooms: 10, max_users: 1, price: 15000 },
+          'BUSINESS': { max_rooms: 30, max_users: 3, price: 35000 },
+          'ENTERPRISE': { max_rooms: 999, max_users: 10, price: 65000 }
+        };
+        const limits = planLimits[codeData.plan_name] || planLimits['STARTER'];
 
-        document.getElementById('codeSuccessDetails').innerHTML = `
-          <div class="code-success-item">
-            <span>📦</span> <strong>${planName}</strong> activé
-          </div>
-          <div class="code-success-item">
-            <span>🛏️</span> Jusqu'à <strong>${maxRooms} chambres</strong>
-          </div>
-          <div class="code-success-item">
-            <span>👤</span> <strong>${maxUsers} utilisateur(s)</strong>
-          </div>
-        `;
-        document.getElementById('codeSuccess').classList.add('visible');
+        sessionStorage.setItem('max_rooms', String(limits.max_rooms));
+        sessionStorage.setItem('max_users', String(limits.max_users));
+        sessionStorage.setItem('plan_price', String(limits.price));
 
-        // Auto-advance to step 2
-        setTimeout(() => goToStep(2), 1200);
+        // 12. Afficher confirmation
+        showPlanConfirmation(codeData.plan_name, limits);
+
+        // 13. Passer \u00e0 l'\u00e9tape 2
+        setTimeout(() => goToStep(2), 1500);
 
       } catch (err) {
-        console.error('Code validation error:', err);
-        alert('Erreur lors de la validation du code.\nDétails : ' + err.message);
-        showErr('codeErrorBox', 'codeErrorText',
-          'Erreur : ' + esc(err.message) + '<br>Vérifiez votre connexion et réessayez.');
-      } finally {
-        btn.disabled = false;
-        btn.classList.remove('loading');
+        console.error('\u274C Erreur inattendue:', err);
+        showStepError('Erreur technique : ' + err.message);
+        if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
       }
     }
 
@@ -1414,26 +1432,22 @@
       hideErr('hotelErrorBox');
       let hasError = false;
 
-      if (!name) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nom de l\'hôtel est requis.'); return false; }
-      if (!city) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez sélectionner une ville.'); return false; }
-      if (!phone) { showErr('hotelErrorBox', 'hotelErrorText', 'Le téléphone de l\'hôtel est requis.'); return false; }
+      if (!name) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nom de l\'h\u00f4tel est requis.'); return false; }
+      if (!city) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez s\u00e9lectionner une ville.'); return false; }
+      if (!phone) { showErr('hotelErrorBox', 'hotelErrorText', 'Le t\u00e9l\u00e9phone de l\'h\u00f4tel est requis.'); return false; }
       if (email && !isValidEmail(email)) { showErr('hotelErrorBox', 'hotelErrorText', 'Veuillez entrer un email valide.'); return false; }
 
-      // Read max_rooms from display-only sessionStorage
-      let maxRooms = 10;
-      try {
-        const planDisplay = JSON.parse(sessionStorage.getItem('ogotel_plan_display') || '{}');
-        maxRooms = parseInt(planDisplay.max_rooms, 10) || 10;
-      } catch(e) { /* fallback to 10 */ }
+      // Read max_rooms from sessionStorage (set by validateActivationCode)
+      let maxRooms = parseInt(sessionStorage.getItem('max_rooms') || '10', 10);
 
       if (!rooms || rooms < 1) { showErr('hotelErrorBox', 'hotelErrorText', 'Le nombre de chambres est requis.'); return false; }
       if (rooms > maxRooms) {
         showErr('hotelErrorBox', 'hotelErrorText',
-          `Votre plan permet au maximum <strong>${esc(maxRooms)} chambres</strong>. Pour plus, contactez-nous.`);
+          'Votre plan permet au maximum <strong>' + esc(maxRooms) + ' chambres</strong>. Pour plus, contactez-nous.');
         return false;
       }
 
-      // Store hotel info (NOT plan info — that will be re-validated from server on submit)
+      // Store hotel info
       sessionStorage.setItem('hotel_name', name);
       sessionStorage.setItem('hotel_city', city);
       sessionStorage.setItem('hotel_address', address);
@@ -1471,8 +1485,8 @@
 
       if (!name) { showFieldErr(document.getElementById('adminName'), document.getElementById('adminNameError'), 'Nom complet requis.'); hasError = true; }
       if (!email || !isValidEmail(email)) { showFieldErr(document.getElementById('adminEmail'), document.getElementById('adminEmailError'), 'Email valide requis.'); hasError = true; }
-      if (!phone || phone.replace(/\s/g, '').length < 10) { showFieldErr(document.getElementById('adminPhone'), document.getElementById('adminPhoneError'), 'Numéro WhatsApp valide requis.'); hasError = true; }
-      if (!pw || pw.length < 8) { showFieldErr(document.getElementById('adminPassword'), document.getElementById('adminPasswordError'), 'Minimum 8 caractères requis.'); hasError = true; }
+      if (!phone || phone.replace(/\s/g, '').length < 10) { showFieldErr(document.getElementById('adminPhone'), document.getElementById('adminPhoneError'), 'Num\u00e9ro WhatsApp valide requis.'); hasError = true; }
+      if (!pw || pw.length < 8) { showFieldErr(document.getElementById('adminPassword'), document.getElementById('adminPasswordError'), 'Minimum 8 caract\u00e8res requis.'); hasError = true; }
       if (pw !== pwConfirm) { showFieldErr(document.getElementById('adminPasswordConfirm'), document.getElementById('adminPasswordConfirmError'), 'Les mots de passe ne correspondent pas.'); hasError = true; }
       if (!terms) {
         document.getElementById('termsError').textContent = 'Vous devez accepter les conditions.';
@@ -1505,67 +1519,32 @@
       const formData = validateStep3();
       if (!formData) return;
 
-      const btn = document.getElementById('btnRegister');
+      const btn = document.getElementById('btn-register');
       btn.disabled = true;
       btn.classList.add('loading');
       hideErr('adminErrorBox');
 
       try {
-        // SECURITY: Re-validate activation code before creating hotel
-        const storedCode = sessionStorage.getItem('ogotel_code');
+        console.log('\uD83D\uDCDD Inscription en cours...');
+
+        // Re-validate activation code via fetch
+        const storedCode = sessionStorage.getItem('activation_code');
         if (!storedCode) {
-          showErr('adminErrorBox', 'adminErrorText',
-            'Code d\'activation introuvable. Veuillez recommencer.');
+          showErr('adminErrorBox', 'adminErrorText', 'Code d\'activation introuvable. Veuillez recommencer.');
           return;
         }
 
-        // Validate code — try RPC first, then direct query
-        let freshValidation = null;
-        try {
-          const rpcResp = await fetch(SB_URL + '/rest/v1/rpc/validate_activation_code', {
-            method: 'POST',
-            headers: sbHeaders(),
-            body: JSON.stringify({ p_code: storedCode })
-          });
-          if (rpcResp.ok) {
-            const rpcResult = await rpcResp.json();
-            if (rpcResult && rpcResult.valid) {
-              freshValidation = rpcResult;
-            }
-          }
-        } catch (e) {
-          console.warn('RPC re-validation failed, trying direct query:', e);
+        const codeResp = await fetch(SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode) + '&select=code,is_used,plan_name,plan_id', {
+          headers: sbHeaders()
+        });
+        const codeRows = await codeResp.json();
+
+        if (!codeRows || codeRows.length === 0 || codeRows[0].is_used) {
+          showErr('adminErrorBox', 'adminErrorText', 'Code d\'activation invalide ou d\u00e9j\u00e0 utilis\u00e9.');
+          return;
         }
-
-        if (!freshValidation) {
-          // Fallback to direct query
-          try {
-            const directResp = await fetch(
-              SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode) + '&select=code,plan,max_rooms,is_used',
-              { headers: sbHeaders() }
-            );
-
-            if (!directResp.ok) throw new Error('Erreur serveur (' + directResp.status + ')');
-
-            const rows = await directResp.json();
-            if (!rows || rows.length === 0 || rows[0].is_used) {
-              showErr('adminErrorBox', 'adminErrorText',
-                'Code d\'activation invalide ou déjà utilisé. Veuillez recommencer.');
-              return;
-            }
-
-            freshValidation = {
-              valid: true,
-              plan_name: rows[0].plan || 'basic',
-              max_rooms: rows[0].max_rooms || 20,
-              plan_id: null
-            };
-          } catch (fallbackErr) {
-            showErr('adminErrorBox', 'adminErrorText',
-              'Erreur de validation du code. Veuillez recommencer.');
-            return;
-          }
-        }
+        const freshValidation = codeRows[0];
+        console.log('\u2705 Code re-valid\u00e9:', freshValidation.plan_name);
 
         // 1. Auth signup via fetch
         const authResp = await fetch(SB_URL + '/auth/v1/signup', {
@@ -1577,57 +1556,44 @@
             data: { full_name: formData.fullName, role: 'hotel_admin' }
           })
         });
-
         const authData = await authResp.json();
+        console.log('\uD83D\uDCE6 Auth response:', authResp.status, authData);
 
         if (!authResp.ok) {
-          const errMsg = (authData && (authData.msg || authData.error_description || authData.message)) || 'Erreur inconnue';
-          if (errMsg.includes('already registered') || errMsg.includes('already been registered') || authResp.status === 422) {
-            showErr('adminErrorBox', 'adminErrorText', 'Cet email est déjà utilisé.<br>Connectez-vous ou utilisez un autre email.');
+          const msg = authData.msg || authData.error_description || authData.message || JSON.stringify(authData);
+          if (msg.includes('already registered') || msg.includes('already been registered')) {
+            showErr('adminErrorBox', 'adminErrorText', 'Cet email est d\u00e9j\u00e0 utilis\u00e9.<br>Connectez-vous ou utilisez un autre email.');
           } else {
-            showErr('adminErrorBox', 'adminErrorText', 'Erreur : ' + esc(errMsg));
+            showErr('adminErrorBox', 'adminErrorText', 'Erreur : ' + esc(msg));
           }
           return;
         }
 
         if (!authData || !authData.user) {
-          showErr('adminErrorBox', 'adminErrorText', 'Erreur lors de la création du compte. Réessayez.');
+          showErr('adminErrorBox', 'adminErrorText', 'Erreur lors de la cr\u00e9ation du compte.');
           return;
         }
+        console.log('\u2705 Utilisateur cr\u00e9\u00e9:', authData.user.id);
 
-        const userId = authData.user.id;
-
-        // 2. Create hotel — use SERVER-VALIDATED values from freshValidation, NOT sessionStorage
-        let hotelId = null;
-        try {
-          const hotelResp = await fetch(SB_URL + '/rest/v1/hotels', {
-            method: 'POST',
-            headers: sbHeaders(),
-            body: JSON.stringify({
-              name: sessionStorage.getItem('hotel_name'),
-              city: sessionStorage.getItem('hotel_city'),
-              address: sessionStorage.getItem('hotel_address') || null,
-              phone: sessionStorage.getItem('hotel_phone'),
-              email: sessionStorage.getItem('hotel_email') || null,
-              plan_name: freshValidation.plan_name || 'Plan',
-              plan_id: freshValidation.plan_id || null,
-              activation_code: storedCode,
-              subscription_start: new Date().toISOString().split('T')[0],
-              subscription_end: getEndDate()
-            })
-          });
-
-          if (hotelResp.ok) {
-            const hotelRows = await hotelResp.json();
-            if (hotelRows && hotelRows.length > 0) {
-              hotelId = hotelRows[0].id;
-            }
-          } else {
-            console.warn('Hotel creation warning:', hotelResp.status, await hotelResp.text());
-          }
-        } catch (hotelErr) {
-          console.warn('Hotel creation warning:', hotelErr);
-        }
+        // 2. Create hotel
+        const hotelResp = await fetch(SB_URL + '/rest/v1/hotels', {
+          method: 'POST',
+          headers: sbHeaders(),
+          body: JSON.stringify({
+            name: sessionStorage.getItem('hotel_name'),
+            city: sessionStorage.getItem('hotel_city'),
+            address: sessionStorage.getItem('hotel_address') || null,
+            phone: sessionStorage.getItem('hotel_phone'),
+            email: sessionStorage.getItem('hotel_email') || null,
+            plan_name: freshValidation.plan_name || 'STARTER',
+            plan_id: freshValidation.plan_id || null,
+            activation_code: storedCode,
+            subscription_start: new Date().toISOString().split('T')[0],
+            subscription_end: getEndDate()
+          })
+        });
+        const hotelData = await hotelResp.json();
+        console.log('\uD83D\uDCE6 Hotel response:', hotelResp.status);
 
         // 3. Create profile
         try {
@@ -1635,49 +1601,35 @@
             method: 'POST',
             headers: sbHeaders(),
             body: JSON.stringify({
-              id: userId,
-              hotel_id: hotelId,
+              id: authData.user.id,
+              hotel_id: hotelData[0]?.id || null,
               full_name: formData.fullName,
               phone: formData.phone,
               role: 'hotel_admin'
             })
           });
-        } catch (profileErr) {
-          console.warn('Profile creation warning:', profileErr);
+        } catch (e) {
+          console.warn('Profile creation warning:', e);
         }
 
-        // 4. Mark code as used — try RPC first, fallback to direct update
+        // 4. Mark code as used
         try {
-          await fetch(SB_URL + '/rest/v1/rpc/use_activation_code', {
-            method: 'POST',
+          await fetch(SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode), {
+            method: 'PATCH',
             headers: sbHeaders(),
-            body: JSON.stringify({ p_code: storedCode })
+            body: JSON.stringify({ is_used: true, used_by: authData.user.id, used_at: new Date().toISOString() })
           });
-        } catch (rpcErr) {
-          console.warn('RPC use_activation_code failed, trying direct update:', rpcErr);
-        }
-        // Always also try direct PATCH as safety net
-        try {
-          await fetch(
-            SB_URL + '/rest/v1/activation_codes?code=eq.' + encodeURIComponent(storedCode),
-            {
-              method: 'PATCH',
-              headers: sbHeaders(),
-              body: JSON.stringify({ is_used: true, used_by: userId })
-            }
-          );
-        } catch (directErr) {
-          console.warn('Direct code update failed:', directErr);
+        } catch (e) {
+          console.warn('Code update warning:', e);
         }
 
         // 5. Show success
+        console.log('\uD83C\uDF89 Inscription compl\u00e8te !');
         showSuccessOverlay();
 
       } catch (err) {
-        console.error('Registration error:', err);
-        alert('Erreur lors de l\'inscription.\nDétails : ' + err.message);
-        showErr('adminErrorBox', 'adminErrorText',
-          'Une erreur est survenue.<br>Vérifiez votre connexion et réessayez.');
+        console.error('\u274C Erreur inscription:', err);
+        showErr('adminErrorBox', 'adminErrorText', 'Erreur : ' + esc(err.message));
       } finally {
         btn.disabled = false;
         btn.classList.remove('loading');
@@ -1706,72 +1658,90 @@
 
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // INIT — Event listeners
+    // INIT — DOMContentLoaded
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     document.addEventListener('DOMContentLoaded', () => {
-      setupToggle('pwToggle1', 'adminPassword', 'eye1', 'eyeOff1');
-      setupToggle('pwToggle2', 'adminPasswordConfirm', 'eye2', 'eyeOff2');
+      console.log('\uD83D\uDCC4 DOM charg\u00e9 ! Initialisation...');
 
-      // Step 1: Code validation
-      document.getElementById('btnValidateCode').addEventListener('click', validateCode);
-      document.getElementById('activationCode').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') validateCode();
-      });
+      // Bind verify button
+      const btn = document.getElementById('verify-code-btn');
+      if (btn) {
+        btn.addEventListener('click', validateActivationCode);
+        console.log('\u2705 Bouton verify-code-btn li\u00e9 avec addEventListener');
+      } else {
+        console.error('\u274C Bouton verify-code-btn introuvable dans le DOM !');
+        // Fallback: search by text content
+        const allBtns = document.querySelectorAll('button');
+        allBtns.forEach(b => {
+          if (b.textContent.includes('V\u00e9rifier') || b.textContent.includes('code')) {
+            b.addEventListener('click', validateActivationCode);
+            console.log('\u2705 Bouton trouv\u00e9 par texte fallback:', b.textContent.trim());
+          }
+        });
+      }
 
-      // Auto uppercase code input
-      document.getElementById('activationCode').addEventListener('input', function() {
-        this.value = this.value.toUpperCase();
-      });
+      // Bind Enter key on input
+      const codeInput = document.getElementById('activation-code');
+      if (codeInput) {
+        codeInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') validateActivationCode();
+        });
+        codeInput.addEventListener('input', (e) => {
+          const pos = e.target.selectionStart;
+          e.target.value = e.target.value.toUpperCase();
+          e.target.setSelectionRange(pos, pos);
+        });
+        console.log('\u2705 Input activation-code li\u00e9');
+      } else {
+        console.error('\u274C Input activation-code introuvable !');
+        alert('ERREUR CRITIQUE: Champ activation-code introuvable !');
+      }
 
-      // Step 2: Navigation
-      document.getElementById('btnBackStep1').addEventListener('click', () => goToStep(1));
-      document.getElementById('btnNextStep2').addEventListener('click', () => {
+      // Step 2 buttons
+      document.getElementById('btn-back-step1')?.addEventListener('click', () => goToStep(1));
+      document.getElementById('btn-next-step2')?.addEventListener('click', () => {
         if (validateStep2()) goToStep(3);
       });
 
-      // Step 3: Navigation + Register
-      document.getElementById('btnBackStep2').addEventListener('click', () => goToStep(2));
-      document.getElementById('btnRegister').addEventListener('click', registerUser);
+      // Step 3 buttons
+      document.getElementById('btn-back-step2')?.addEventListener('click', () => goToStep(2));
+      document.getElementById('btn-register')?.addEventListener('click', registerUser);
+
+      // Password toggles
+      setupToggle('pwToggle1', 'adminPassword', 'eye1', 'eyeOff1');
+      setupToggle('pwToggle2', 'adminPasswordConfirm', 'eye2', 'eyeOff2');
 
       // Password strength
-      document.getElementById('adminPassword').addEventListener('input', function() {
+      document.getElementById('adminPassword')?.addEventListener('input', function() {
         updateStrengthUI(checkPasswordStrength(this.value));
       });
 
-      // Confirm password match — real-time
-      document.getElementById('adminPasswordConfirm').addEventListener('input', function() {
+      // Confirm password match
+      document.getElementById('adminPasswordConfirm')?.addEventListener('input', function() {
         const pw = document.getElementById('adminPassword').value;
         const errEl = document.getElementById('adminPasswordConfirmError');
-        const inputEl = this;
         if (this.value && this.value !== pw) {
-          showFieldErr(inputEl, errEl, 'Les mots de passe ne correspondent pas.');
+          showFieldErr(this, errEl, 'Les mots de passe ne correspondent pas.');
         } else {
-          clearFieldErr(inputEl, errEl);
+          clearFieldErr(this, errEl);
         }
       });
 
-      // Populate plan info when step 2 becomes visible — use display-only sessionStorage
+      // Plan info observer
       const observer = new MutationObserver(() => {
         if (document.getElementById('step2').classList.contains('active')) {
-          let planName = 'Plan';
-          let maxRooms = 10;
-          try {
-            const planDisplay = JSON.parse(sessionStorage.getItem('ogotel_plan_display') || '{}');
-            planName = planDisplay.plan_name || 'Plan';
-            maxRooms = planDisplay.max_rooms || 10;
-          } catch(e) { /* fallback defaults */ }
+          let planName = sessionStorage.getItem('plan_name') || 'STARTER';
+          let maxRooms = parseInt(sessionStorage.getItem('max_rooms') || '10', 10);
           document.getElementById('planInfo').innerHTML =
-            `📦 Votre plan <strong>${esc(planName)}</strong> permet jusqu'à <strong>${esc(maxRooms)} chambres</strong>`;
-          document.getElementById('roomsHint').textContent =
-            `Maximum autorisé par votre plan : ${maxRooms} chambres`;
-          const roomsInput = document.getElementById('hotelRooms');
-          roomsInput.max = maxRooms;
+            '\uD83D\uDCE6 Votre plan <strong>' + esc(planName) + '</strong> permet jusqu\'\u00e0 <strong>' + esc(maxRooms) + ' chambres</strong>';
+          document.getElementById('roomsHint').textContent = 'Maximum autoris\u00e9 par votre plan : ' + maxRooms + ' chambres';
+          document.getElementById('hotelRooms').max = maxRooms;
         }
       });
       observer.observe(document.getElementById('step2'), { attributes: true, attributeFilter: ['class'] });
 
-      // Clear errors on input focus
+      // Clear errors on focus
       document.querySelectorAll('.field-input, .field-select').forEach(input => {
         input.addEventListener('focus', function() {
           this.classList.remove('has-error');
@@ -1779,6 +1749,8 @@
           if (errEl) { errEl.textContent = ''; errEl.classList.remove('visible'); }
         });
       });
+
+      console.log('\u2705 Initialisation compl\u00e8te ! Page pr\u00eate.');
     });
   </script>
 
